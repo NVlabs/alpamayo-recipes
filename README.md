@@ -1,45 +1,16 @@
 # Alpamayo Recipes
 
-A collection of end-to-end Alpamayo recipes for multiple versions (v1, v1.5, and beyond), designed to help developers quickly build, adapt, and productionize Alpamayo-based applications. This 
-repo brings together battle-tested workflows across the Alpamayo ecosystem, including: Post-training recipes (SFT, RL, and distillation), Auto-labeling and data curation workflows, AlpaGym, etc. 
-Whether you are experimenting locally or building a full production stack, this repository is intended as the primary starting point for external developers to learn, customize, and extend Alpamayo for their own use cases.
-
-## Prerequisites
-
-### 1. Install uv
-
-A version of uv is necessary to install the alpamayo related packages.
-
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-export PATH="$HOME/.local/bin:$PATH"
-```
-### 2. Install alpamayo (inference models)
-
-All recipes depend on the **Alpamayo** model package. Clone and install it first:
-
-```bash
-git clone https://github.com/NVlabs/alpamayo.git
-cd alpamayo
-uv venv ar1_venv
-source ar1_venv/bin/activate
-uv sync --active
-cd ..
-```
-
-Follow any additional setup steps in [alpamayo/README.md](https://github.com/NVlabs/alpamayo/blob/main/README.md).
-
-### 3. Install alpamayo-recipes
-
-```bash
-git clone <this-repo-url> alpamayo-recipes
-cd alpamayo-recipes
-uv sync --active   # automatically installs alpamayo as a dependency
-```
+A collection of end-to-end Alpamayo recipes for multiple versions (v1, v1.5, and beyond), designed
+to help developers quickly build, adapt, and productionize Alpamayo-based applications. This repo
+brings together battle-tested workflows across the Alpamayo ecosystem, including: Post-training
+recipes (SFT, RL, and distillation), Auto-labeling and data curation workflows, AlpaGym, etc.
+Whether you are experimenting locally or building a full production stack, this repository is
+intended as the primary starting point for external developers to learn, customize, and extend
+Alpamayo for their own use cases.
 
 ## Recipes
 
-Go to each recipe folder for its own README with full setup and training instructions.
+Each recipe folder contains its own README with installation and training instructions.
 
 | Recipe | Description |
 |--------|-------------|

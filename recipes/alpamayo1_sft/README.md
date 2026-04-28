@@ -12,6 +12,30 @@ Physical AI AV dataset.
 - [x] Data loader support
   - PAI: [physical_ai_av](https://huggingface.co/datasets/nvidia/PhysicalAI-Autonomous-Vehicles)
 
+## Installation
+
+### 1. Install uv
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+### 2. Clone and install
+
+```bash
+git clone <this-repo-url> alpamayo-recipes
+cd alpamayo-recipes/recipes/alpamayo1_sft
+uv venv a1_sft
+source a1_sft/bin/activate
+uv sync --active
+```
+
+`alpamayo_r1` (inference models, action space, geometry) is automatically fetched from
+[NVlabs/alpamayo](https://github.com/NVlabs/alpamayo.git) as part of `uv sync` — no separate
+clone needed.
+
+
 ## Prepare dataset and checkpoint
 
 ### Download the PAI dataset
@@ -57,10 +81,9 @@ Set `checkpoint_path` in [configs/models/ar1_base.yaml](configs/models/ar1_base.
 
 > Alpamayo-1 uses Hydra, so you can extend or override configuration in a structured way.
 
-> **Weights & Biases:** To log runs to W&B, uncomment the `wandb` default in
-> [configs/sft_base.yaml](configs/sft_base.yaml), fill in `team` and `project` in
-> [configs/wandb/default.yaml](configs/wandb/default.yaml), set `report_to: wandb` under
-> `trainer`, and have your W&B API key available when training starts.
+> **Weights & Biases:** To log runs to W&B, uncomment the `wandb` default, and set `report_to: wandb` under
+> `trainer` in [configs/sft_base.yaml](configs/sft_base.yaml). Additionally, fill in `team` and `project` in
+> [configs/wandb/default.yaml](configs/wandb/default.yaml), and have your W&B API key available when training starts.
 
 ### Data loader
 

@@ -1,0 +1,14 @@
+[project]
+name = "alpamayo-r1-training"
+version = "0.1.0"
+requires-python = "==3.12.*"
+dependencies = []
+
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+# Extends the alpamayo_r1 namespace package with training-only utilities
+# (data loaders, metrics, common helpers, visualization, etc.).
+[tool.hatch.build.targets.wheel]
+packages = ["alpamayo_r1"]
