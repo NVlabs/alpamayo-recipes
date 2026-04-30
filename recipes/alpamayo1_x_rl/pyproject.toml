@@ -1,0 +1,44 @@
+[project]
+name = "alpamayo1-x-rl"
+version = "0.1.0"
+requires-python = "==3.12.*"
+dependencies = [
+  "alpamayo_r1",  # inference models, action_space, geometry.rotation, common.logging, etc.
+  "alpamayo-r1-training",  # training-only namespace extension (data, metrics, common, etc.)
+  "cosmos-rl",
+  "einops>=0.8.1",
+  "hydra-core>=1.3.2",
+  "torch==2.8.0",
+  "transformers==4.57.1",
+  "vllm==0.11.0",
+  "flash-attn>=2.8.3",
+]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+# Look one level up (recipes/) so setuptools finds alpamayo1_x_rl/ as a proper package.
+# The editable install adds recipes/ to sys.path, making `alpamayo1_x_rl` importable
+# from within this directory once the venv is active.
+[tool.setuptools.packages.find]
+where = [".."]
+include = ["alpamayo1_x_rl*"]
+
+[dependency-groups]
+dev = [
+  "ipykernel>=6.29.3",
+  "ipywidgets>=8.1.8",
+  "tqdm",
+]
+
+[tool.uv]
+no-build-isolation-package = ["flash-attn"]
+
+[tool.uv.sources]
+alpamayo_r1 = { git = "https://github.com/NVlabs/alpamayo.git" }
+alpamayo-r1-training = { path = "../../src", editable = true }
+cosmos-rl = { git = "https://github.com/nvidia-cosmos/cosmos-rl.git", rev = "747d1bd" }
+
+[tool.ruff]
+line-length = 100

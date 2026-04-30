@@ -46,9 +46,9 @@ export YOUR_HOME="/path/to/your/workspace"
 ```bash
 export UV_CACHE_DIR="$YOUR_HOME/.cache/uv"
 
-cd "$YOUR_HOME/alpamayo-recipes"
-uv venv alpamayo_env
-source alpamayo_env/bin/activate
+cd "$YOUR_HOME/alpamayo-recipes/recipes/alpamayo1_x_rl"
+uv venv a1x_rl
+source a1x_rl/bin/activate
 uv sync --active --no-install-package flash-attn   # install all deps except flash-attn
 uv sync --active                                   # then build flash-attn (needs torch)
 ```
@@ -143,7 +143,7 @@ python scripts/curate_pai_samples.py \
 ### 6. Launch RL training
 
 Update the TOML config before launching. For local testing use
-`recipes/alpamayo1_x_rl/toml/alpamayo_rvla_rl_local_test.toml`.
+[`$ALPAMAYO_WORKSPACE/recipes/alpamayo1_x_rl/toml/alpamayo_rvla_rl_local_test.toml`](toml/alpamayo_rvla_rl_local_test.toml).
 
 Key fields to set:
 
