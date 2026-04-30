@@ -1,7 +1,7 @@
 defaults:
   # - /wandb: default # uncomment to enable W&B logging
-  - /vla_processor@data.train_dataset.vla_preprocess_args
-  - /vla_processor@data.val_dataset.vla_preprocess_args
+  - /vla_processor@data.train_dataset.vla_preprocess_args: default
+  - /vla_processor@data.val_dataset.vla_preprocess_args: default
 data:
   collate_fn:
     _target_: alpamayo_r1.processor.qwen_processor.collate_fn_from_model_config

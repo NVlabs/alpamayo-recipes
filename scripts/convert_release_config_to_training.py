@@ -49,9 +49,11 @@ Usage:
 import argparse
 import copy
 import json
-import os
+
 import shutil
 from pathlib import Path
+
+from alpamayo_r1.utils.checkpoint_utils import collect_targets, remap_targets, setup_checkpoint_output
 
 # ============================================================================
 # Hydra _target_ remapping table  (release -> training)
@@ -78,27 +80,6 @@ def _default_output_dir(model: str) -> str:
 # ============================================================================
 # Config conversion helpers (pure functions, no side effects)
 # ============================================================================
-
-
-def remap_target(target: str) -> str:
-    """Remap a Hydra _target_ string from release -> training namespace."""
-    for old_prefix, new_prefix in TARGET_REMAP.items():
-        if target.startswith(old_prefix):
-            return new_prefix + target[len(old_prefix) :]
-    return target
-
-
-def remap_targets_recursive(obj: object) -> None:
-    """Walk a nested dict/list and remap all _target_ values."""
-    if isinstance(obj, dict):
-        for key, value in obj.items():
-            if key == "_target_" and isinstance(value, str):
-                obj[key] = remap_target(value)
-            else:
-                remap_targets_recursive(value)
-    elif isinstance(obj, list):
-        for item in obj:
-            remap_targets_recursive(item)
 
 
 def convert_config(
@@ -131,8 +112,8 @@ def convert_config(
 
     # --- 3. Remap all _target_ paths ---
     old_targets = _collect_targets(config)
-    remap_targets_recursive(out)
-    new_targets = _collect_targets(out)
+    remap_targets(out, TARGET_REMAP)
+    new_targets = collect_targets(out)
     for path, old_val in old_targets.items():
         new_val = new_targets.get(path, old_val)
         if old_val != new_val:
@@ -147,22 +128,6 @@ def convert_config(
         changes.append(f"vlm_name_or_path: kept as {old_vlm!r}")
 
     return out, changes
-
-
-def _collect_targets(obj: object, prefix: str = "") -> dict[str, str]:
-    """Recursively collect all _target_ values with their JSON paths."""
-    targets: dict[str, str] = {}
-    if isinstance(obj, dict):
-        for key, value in obj.items():
-            path = f"{prefix}.{key}" if prefix else key
-            if key == "_target_" and isinstance(value, str):
-                targets[prefix] = value
-            else:
-                targets.update(_collect_targets(value, path))
-    elif isinstance(obj, list):
-        for i, item in enumerate(obj):
-            targets.update(_collect_targets(item, f"{prefix}[{i}]"))
-    return targets
 
 
 # ============================================================================
@@ -215,17 +180,8 @@ def setup_output_dir(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # --- Symlink safetensors and index ---
-    for src_file in sorted(alpamayo_path.iterdir()):
-        if (
-            src_file.name.endswith(".safetensors")
-            or src_file.name == "model.safetensors.index.json"
-        ):
-            real_src = src_file.resolve()
-            dst = output_dir / src_file.name
-            if dst.exists() or dst.is_symlink():
-                dst.unlink()
-            os.symlink(real_src, dst)
-            actions.append(f"symlink: {src_file.name} -> {real_src}")
+
+    actions.extend(setup_checkpoint_output(alpamayo_path, output_dir))
 
     # --- Copy generation_config.json from VLM ---
     gen_cfg = vlm_path / "generation_config.json"

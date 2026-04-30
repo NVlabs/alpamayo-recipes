@@ -23,9 +23,15 @@ export PATH="$HOME/.local/bin:$PATH"
 
 ### 2. Clone and install
 
+First, define your working directory (all subsequent commands reference `$YOUR_HOME`):
+
 ```bash
-git clone <this-repo-url> alpamayo-recipes
-cd alpamayo-recipes/recipes/alpamayo1_sft
+export YOUR_HOME="/path/to/your/workspace"
+```
+
+```bash
+git clone https://github.com/NVlabs/alpamayo-recipes.git $YOUR_HOME/alpamayo-recipes
+cd $YOUR_HOME/alpamayo-recipes/recipes/alpamayo1_sft
 uv venv a1_sft
 source a1_sft/bin/activate
 uv sync --active
@@ -51,6 +57,7 @@ export HF_TOKEN=<your Hugging Face token>
 Download a representative slice for Alpamayo-1 (chunks 0–10, four cameras, egomotion) running from `alpamayo-recipes`:
 
 ```bash
+cd $YOUR_HOME/alpamayo-recipes
 python scripts/download_pai.py \
   --chunk-ids 0-10 \
   --camera camera_front_wide_120fov camera_cross_left_120fov camera_cross_right_120fov camera_front_tele_30fov \
@@ -61,6 +68,21 @@ python scripts/download_pai.py \
 
 > `--chunk-ids` accepts a single id (`0`), multiple ids (`0 1`), or a range (`0-3`, which yields
 > chunks 0, 1, and 2). Omit it (or pass `None`) to download the full dataset (~97 TB).
+
+### Dataset with additional CoC reasoning labels
+
+We released a set of reasoning labels in the PAI dataset. To download a subset of clips with reasoning labels, run the following script:
+
+```bash
+cd $YOUR_HOME/alpamayo-recipes
+python scripts/download_pai.py --only-reasoning-chunks \
+  --num-reasoning-clips 16 \
+  --camera camera_front_wide_120fov camera_cross_left_120fov camera_cross_right_120fov camera_front_tele_30fov \
+  --calibration camera_intrinsics sensor_extrinsics vehicle_dimensions \
+  --labels egomotion \
+  --reasoning ood_reasoning.parquet \
+  --output-dir /path/to/pai_dataset
+```
 
 ### Download the checkpoint
 
@@ -108,6 +130,7 @@ Adjust settings such as `dataloader_num_workers` or the learning rate in the con
 > for memory-efficient multi-GPU training.
 
 ```bash
+cd $YOUR_HOME/alpamayo-recipes/recipes/alpamayo1_sft
 torchrun --nproc_per_node 8 \
   -m alpamayo1_sft.train_hf \
   --config-path pkg://alpamayo1_sft/configs \
@@ -130,11 +153,23 @@ Example log lines:
 {'loss': 1.697, 'grad_norm': 1.1325, 'learning_rate': 6.25e-08, 'epoch': 0.08}
 ```
 
+
+##### Enable CoC reasoning for stage 1
+
+Note that in the sample scenario provided, CoC labels are not used. To enable CoC, update the [default.yaml](./configs/vla_processor/default.yaml) as follows:
+
+```yaml
+components_order: ["image", "traj_history", "prompt", "cot", "traj_future"]
+components_prompt: ["cot", "traj_future"]
+label_components: ["cot", "traj_future"]
+```
+
 #### Stage 2
 
 Stage 2 adds the trajectory diffusion expert and keeps the Stage-1 VLM frozen.
 
 ```bash
+cd $YOUR_HOME/alpamayo-recipes/recipes/alpamayo1_sft
 torchrun --nproc_per_node 8 \
   -m alpamayo1_sft.train_hf \
   --config-path pkg://alpamayo1_sft/configs \
@@ -158,6 +193,7 @@ Loss curve:
 Evaluate the Stage-2 checkpoint against `val_dataset`:
 
 ```bash
+cd $YOUR_HOME/alpamayo-recipes/recipes/alpamayo1_sft
 torchrun --nproc_per_node 8 \
   -m alpamayo1_sft.evaluate_hf \
   --config-path pkg://alpamayo1_sft/configs \
