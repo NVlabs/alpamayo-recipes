@@ -26,7 +26,7 @@ from alpamayo1_x_rl.utils.weight_loading import copy_state_into_dtensor_shards, 
 from alpamayo1_x_rl.models.reasoning_vla.base_model import RLWrapperReasoningVLA
 
 
-class RVLACosmos(BaseCosmosWrapper):
+class ReasoningVLACosmos(BaseCosmosWrapper):
     """Cosmos BaseModel wrapper around RLWrapperReasoningVLA (FSDP2 sharding + input bridging)."""
 
     def __init__(self, hf_config: AutoConfig):
@@ -142,8 +142,8 @@ class RVLACosmos(BaseCosmosWrapper):
         hf_config: AutoConfig,
         model_name_or_path: str,
         max_position_embeddings: int | None = None,
-    ) -> RVLACosmos:
-        """Construct an RVLACosmos instance from a pretrained checkpoint path."""
+    ) -> ReasoningVLACosmos:
+        """Construct a ReasoningVLACosmos instance from a pretrained checkpoint path."""
         checkpoint_config = AutoConfig.from_pretrained(
             model_name_or_path,
             trust_remote_code=True,

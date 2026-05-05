@@ -28,6 +28,7 @@ data:
       include_extr_intr: true
       reshape_tensors_for_rl: true
       use_default_keyframe: false
+      reasoning_metadata: null
       model_config:
         vlm_name_or_path: nvidia/Cosmos-Reason2-8B
         traj_vocab_size: 4000

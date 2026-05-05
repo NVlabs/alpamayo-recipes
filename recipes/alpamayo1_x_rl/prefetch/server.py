@@ -282,9 +282,9 @@ def _materialize_local_for_role(*, dataset: Any, mapped_idx: int, role: str) -> 
     raw = dataset.__getitem__(int(mapped_idx))
     if role == "raw":
         return raw
-    from alpamayo1_x_rl.models.reasoning_vla.data_packer import RVLADataPacker
+    from rl.models.reasoning_vla.data_packer import ReasoningVLADataPacker
 
-    packer = RVLADataPacker()
+    packer = ReasoningVLADataPacker()
     if role == "policy":
         pol = _copy_for_role(raw)
         if not isinstance(pol, dict):
@@ -368,7 +368,7 @@ class _WorkerResult:
 
 def _server_main(*, dataset: Any, socket_path: str, server_key: str) -> None:
     """Run the node-level prefetch server loop (one per node per split)."""
-    from alpamayo1_x_rl.models.reasoning_vla.data_packer import RVLADataPacker
+    from alpamayo1_x_rl.models.reasoning_vla.data_packer import ReasoningVLADataPacker
 
     ds_len = len(dataset)
     if ds_len <= 0:
@@ -382,7 +382,7 @@ def _server_main(*, dataset: Any, socket_path: str, server_key: str) -> None:
     _prefetch_log("info", "server_starting", socket=socket_path, server_key=str(server_key))
 
     log_request_details = bool(_alpamayo_cfg_get("prefetch.log_request_details", True))
-    packer = RVLADataPacker()
+    packer = ReasoningVLADataPacker()
 
     cache: OrderedDict[int, _Entry] = OrderedDict()
     # Background prefetch workers: keep "next-per-mod" warm without blocking hit-serving.

@@ -121,7 +121,11 @@ python scripts/convert_release_config_to_training.py \
 
 You'll need to set `export HF_HUB_OFFLINE=0` to run the following.
 
+#### Dataset with ego motion labels only
+
 ```bash
+cd "$ALPAMAYO_WORKSPACE"
+
 python scripts/download_pai.py \
   --chunk-ids 3116 \
   --camera camera_front_wide_120fov camera_cross_left_120fov camera_cross_right_120fov camera_front_tele_30fov \
@@ -133,6 +137,8 @@ python scripts/download_pai.py \
 Then curate a mini subset of 16 driving clips for local RL training:
 
 ```bash
+cd "$ALPAMAYO_WORKSPACE"
+
 python scripts/curate_pai_samples.py \
   --clip-index-path "$ALPAMAYO_PAI_LOCAL_DIR/clip_index.parquet" \
   --chunk 3116 \
@@ -140,7 +146,35 @@ python scripts/curate_pai_samples.py \
   --output-path "$ALPAMAYO_PAI_LOCAL_DIR/clip_index_mini.parquet"
 ```
 
+#### Dataset with additional reasoning labels
+
+We released a set of reasoning labels in the PAI dataset. To download a subset of clips with reasoning labels, run the following script:
+
+```bash
+export ALPAMAYO_PAI_REASONING_LOCAL_DIR="$YOUR_HOME/PAI_Reasoning_mini"
+cd "$ALPAMAYO_WORKSPACE"
+
+python scripts/download_pai.py --only-reasoning-chunks \
+  --num-reasoning-clips 16 \
+  --camera camera_front_wide_120fov camera_cross_left_120fov camera_cross_right_120fov camera_front_tele_30fov \
+  --calibration camera_intrinsics sensor_extrinsics vehicle_dimensions \
+  --labels egomotion egomotion.offline obstacle.offline \
+  --reasoning ood_reasoning.parquet \
+  --output-dir "$ALPAMAYO_PAI_REASONING_LOCAL_DIR"
+```
+
+`--num-reasoning-clips` controls how many **clips** to randomly sample from reasoning data set. It defaults to `16` and must be used together with `--only-reasoning-chunks`. Sampling is deterministic and can be controlled via `--random-seed` (default: `11`).
+
+After a successful run, `$ALPAMAYO_PAI_REASONING_LOCAL_DIR` contains:
+
+- `clip_index.parquet` — full PAI clip index (used internally to map clip_ids to chunks).
+- `reasoning/ood_reasoning.parquet` — full OOD reasoning table.
+- `clip_index_reasoning_mini.parquet` — **the mini clip index consumed by RL training**; contains exactly the `--num-reasoning-clips` sampled rows.
+- `camera/<subpart>/<subpart>.chunk_XXXX.zip`, `labels/<subpart>/<subpart>.chunk_XXXX.zip`, `calibration/<subpart>/...` — only the chunks that contain the sampled clips.
+
 ### 6. Launch RL training
+
+#### RL with motion-based reward (local 1 node test)
 
 Update the TOML config before launching. For local testing use
 [`$ALPAMAYO_WORKSPACE/recipes/alpamayo1_x_rl/toml/alpamayo_rvla_rl_local_test.toml`](toml/alpamayo_rvla_rl_local_test.toml).
@@ -184,6 +218,44 @@ trajectory L2 error decrease (reward improved from -0.28 to -0.21, and trajector
 
 <p align="center">
   <img src="assets/local_training_reward_curves.png" alt="Local training reward curves" width="700">
+</p>
+
+#### RL with joint reasoning-motion reward (local 1 node test)
+
+This mode adds a reasoning grading reward that scores chain-of-thought outputs against ground-truth references. As an example, we use [Lingo-Judge](https://huggingface.co/wayveai/Lingo-Judge), a fine-tuned sequence classifier. You can implement your own grader by subclassing `BaseReasoningGrader` in [`utils/light_weight_reasoning_grading_model.py`](utils/light_weight_reasoning_grading_model.py).
+
+First, cache the grading model locally (the reward function loads it with `local_files_only=True`):
+
+```bash
+hf download wayveai/Lingo-Judge \
+    --local-dir /path/to/lingo_judge_model
+```
+
+Then set the TOML config to point to the cached directory. Key fields under `[custom.alpamayo]`:
+
+| Field                          | Purpose                                                  |
+| ------------------------------ | -------------------------------------------------------- |
+| `reasoning_grader_type`        | Grader backend (default `"lingo_judge"`)                 |
+| `reasoning_grading_model_path` | Path to the cached grading model directory               |
+| `reasoning_grading_device`     | Device for the grader (`"auto"`, `"cpu"`, `"cuda:0"`)    |
+| `reward.reasoning_weight`      | Weight for reasoning reward (`[custom.alpamayo.reward]`) |
+
+Launch training with the reasoning-labeled dataset from step 5 (`--only-reasoning-chunks`):
+
+```bash
+cd "$ALPAMAYO_WORKSPACE"
+cosmos-rl \
+  --config recipes/alpamayo1_x_rl/toml/alpamayo_rvla_rl_local_test_with_reasoning.toml \
+  --policy 1 \
+  --rollout 1 \
+  --log-dir "$ALPAMAYO_LOG_DIR" \
+  recipes/alpamayo1_x_rl/models/reasoning_vla/alpamayo_cosmos_rl_post_training_reasoning_entry.py
+```
+
+With the default settings for reasoning data training, you should see reasoning score increase and trajectory L2 error decrease. The local test finishes within ~1.1 hours on a single 8×GPU (A100) node:
+
+<p align="center">
+  <img src="assets/local_training_reward_curves_reasoning.png" alt="Local training reward curves with reasoning data" width="700">
 </p>
 
 ### 7. Export the RL checkpoint for inference

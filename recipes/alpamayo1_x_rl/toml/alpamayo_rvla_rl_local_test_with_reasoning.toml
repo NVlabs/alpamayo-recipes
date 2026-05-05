@@ -17,7 +17,7 @@ redis = "12800"
 
 [train]
 resume = false
-epoch = 15
+epoch = 30
 output_dir = "/path/to/alpamayo_cosmos_rl_job/outputs"
 epsilon = 1e-6
 optm_name = "AdamW"
@@ -120,10 +120,16 @@ idx_rng_enable = false
 idx_rng_seed = 1234
 idx_rng_debug = false
 
+# Reasoning grader
+# device: "auto" = cuda:{LOCAL_RANK} per rollout worker | "cpu" | "cuda:0" etc.
+reasoning_grader_type = "lingo_judge"
+reasoning_grading_model_path = "/path/to/lingo_judge_model"
+reasoning_grading_device = "auto"
 
 [custom.alpamayo.reward]
-traj_l2_weight = 0.4
-comfort_weight = 0.1
+traj_l2_weight = 0.2
+comfort_weight = 0.0
+reasoning_weight = 0.3
 
 [custom.alpamayo.prefetch]
 

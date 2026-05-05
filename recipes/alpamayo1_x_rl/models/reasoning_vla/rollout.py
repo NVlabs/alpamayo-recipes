@@ -48,7 +48,7 @@ def vllm_version_check(rollout_config: RolloutConfig):
 
 
 @RolloutRegistry.register("reasoning_vla_vllm_rollout")
-class ReasoningVlaVllmRollout(RolloutBase):
+class ReasoningVLAVllmRollout(RolloutBase):
     """vLLM-backed rollout engine for ReasoningVLA models."""
 
     def __init__(

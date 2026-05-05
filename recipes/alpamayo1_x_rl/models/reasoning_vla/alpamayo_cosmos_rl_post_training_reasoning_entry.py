@@ -29,11 +29,11 @@ import os
 os.environ.setdefault("COSMOS_HEARTBEAT_TIMEOUT", "600")
 os.environ.setdefault("COSMOS_LOG_LEVEL", "DEBUG")
 
-_PAI_LOCAL_DIR = os.getenv("ALPAMAYO_PAI_LOCAL_DIR")
-if not _PAI_LOCAL_DIR:
+_PAI_REASONING_LOCAL_DIR = os.getenv("ALPAMAYO_PAI_REASONING_LOCAL_DIR")
+if not _PAI_REASONING_LOCAL_DIR:
     raise RuntimeError(
-        "Missing required env var ALPAMAYO_PAI_LOCAL_DIR "
-        "(expected PAI dataset root, e.g. /path/to/PAI_mini)."
+        "Missing required env var ALPAMAYO_PAI_REASONING_LOCAL_DIR "
+        "(expected PAI reasoning dataset root, e.g. /path/to/PAI_Reasoning_mini)."
     )
 
 # ---------------------------------------------------------------------------
@@ -63,8 +63,8 @@ from alpamayo1_x_rl.models.reasoning_vla.weight_mapper import ReasoningVLAWeight
 
 def _reasoning_vla_reward_fn(to_be_evaluated, reference=None, *args, config=None, **kwargs):
     """Compute aggregated reward for a single ReasoningVLA rollout."""
-    import rl.state as alp_state
-    from rl.rewards.aggregated_reward import compute_reward
+    import alpamayo1_x_rl.state as alp_state
+    from alpamayo1_x_rl.rewards.aggregated_reward_with_reasoning import compute_reward
 
     assert isinstance(reference, dict) and reference, (
         f"Expected a non-empty dict for reference, got {type(reference).__name__}: {reference!r}"
@@ -87,11 +87,11 @@ REASONING_VLA_SPEC = ModelSpec(
     hydra_config_path="hydra_configs",
     hydra_config_name="alpamayo1_5_rvla_rl_pai",
     hydra_overrides=[
-        f"data.train.dataset.local_dir={_PAI_LOCAL_DIR}",
-        "data.train.dataset.clip_index_metadata=clip_index_mini.parquet",
+        f"data.train.dataset.local_dir={_PAI_REASONING_LOCAL_DIR}",
+        "data.train.dataset.clip_index_metadata=clip_index_reasoning_mini.parquet",
         "data.train.dataset.features_metadata=features.csv",
-        "data.train.dataset.use_default_keyframe=True",
-        "data.train.dataset.reasoning_metadata=None",
+        "data.train.dataset.use_default_keyframe=False",
+        "data.train.dataset.reasoning_metadata=reasoning/ood_reasoning.parquet",
     ],
 )
 
