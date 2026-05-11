@@ -18,7 +18,8 @@ import os
 import wandb
 import yaml
 
-from alpamayo_r1.common import distributed, logging
+from alpamayo.common import distributed
+from alpamayo_r1.common import logging
 
 logger = logging.RankedLogger(__name__, rank_zero_only=True)
 logger.setLevel("INFO")

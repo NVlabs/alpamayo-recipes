@@ -53,7 +53,7 @@ import json
 import shutil
 from pathlib import Path
 
-from alpamayo_r1.utils.checkpoint_utils import collect_targets, remap_targets, setup_checkpoint_output
+from alpamayo.utils.checkpoint_utils import collect_targets, remap_targets, setup_checkpoint_output
 
 # ============================================================================
 # Hydra _target_ remapping table  (release -> training)

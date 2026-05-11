@@ -8,7 +8,7 @@ data:
     _partial_: true
   train_dataset:
     _recursive_: false
-    _target_: alpamayo_r1.data.pai.PAIDataset
+    _target_: alpamayo.data.pai.PAIDataset
     local_dir: ???
     chunk_ids: "0-99"
     use_default_keyframe: true
@@ -16,7 +16,7 @@ data:
       generation_mode: false
   val_dataset:
     _recursive_: false
-    _target_: alpamayo_r1.data.pai.PAIDataset
+    _target_: alpamayo.data.pai.PAIDataset
     local_dir: ???
     chunk_ids: "99-100"
     use_default_keyframe: true
@@ -29,15 +29,15 @@ evaluate:
   max_eval_steps: -1
   torch_dtype: bfloat16
   metric_runner:
-    _target_: alpamayo_r1.metrics.metric_runner.MetricRunner
+    _target_: alpamayo.metrics.metric_runner.MetricRunner
     metrics:
-      - _target_: alpamayo_r1.metrics.metric_api.ReasoningSampler
+      - _target_: alpamayo.metrics.metric_api.ReasoningSampler
         num_traj_sets: 1
         top_p: 0.98
         temperature: 0.6
         traj_only_generation: false
         max_generation_length: 256
-      - _target_: alpamayo_r1.metrics.metric_api.DistanceMetrics
+      - _target_: alpamayo.metrics.metric_api.DistanceMetrics
 trainer:
   output_dir: ${paths.output_dir}
   per_device_train_batch_size: 1

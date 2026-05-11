@@ -21,13 +21,13 @@ import torch
 from omegaconf import DictConfig, OmegaConf
 
 from alpamayo_r1.common import logging
-from alpamayo_r1.common import misc
+from alpamayo.common import misc
 
 from alpamayo1_sft.trainer import ReasoningVLA_Trainer
 from alpamayo1_sft.trainer import TrainingArguments
 
-from alpamayo_r1.common import config_utils
-from alpamayo_r1.common import wandb_utils
+from alpamayo.common import config_utils
+from alpamayo.common import wandb_utils
 from alpamayo_r1.common.logging import setup_logging
 
 setup_logging()

@@ -18,8 +18,8 @@ from typing import Mapping, MutableMapping
 import torch
 
 from alpamayo_r1.common import logging
-from alpamayo_r1.metrics.metric_utils import apply_prefix
-from alpamayo_r1.metrics import distance_metrics
+from alpamayo.metrics.metric_utils import apply_prefix
+from alpamayo.metrics import distance_metrics
 
 # default vehicle size in meters
 EGO_VEHICLE_LWH = (4.0, 3.0, 2.0)

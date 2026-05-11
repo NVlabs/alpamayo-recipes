@@ -16,7 +16,7 @@
 from typing import Any
 
 import torch
-from alpamayo_r1.data.pai_utils import PhysicalAIAVDatasetLocalInterface
+from alpamayo.data.pai_utils import PhysicalAIAVDatasetLocalInterface
 from alpamayo_r1.load_physical_aiavdataset import load_physical_aiavdataset
 from hydra.utils import instantiate
 from omegaconf import OmegaConf
@@ -42,6 +42,7 @@ class PAIDataset(Dataset):
         num_history_steps: int = 16,
         num_future_steps: int = 64,
         time_step: float = 0.1,
+        reasoning_metadata: str | None = None,
     ):
         """Initialize dataset.
 
@@ -64,12 +65,15 @@ class PAIDataset(Dataset):
             num_history_steps: History length for ``load_physical_aiavdataset``.
             num_future_steps: Future horizon for ``load_physical_aiavdataset``.
             time_step: Seconds per step between trajectory samples.
+            reasoning_metadata: Filename under ``local_dir`` for the reasoning parquet, in PAI
+                dataset it is "reasoning/ood_reasoning.parquet". If None, no reasoning data will be loaded.
         """
         self.avdi = PhysicalAIAVDatasetLocalInterface(
             local_dir=local_dir,
             chunk_ids=chunk_ids,
             features_metadata=features_metadata,
             clip_index_metadata=clip_index_metadata,
+            reasoning_metadata=reasoning_metadata,
         )
         self.clip_ids = self.avdi.get_all_clip_ids()
         self.include_extr_intr = include_extr_intr
@@ -131,6 +135,10 @@ class PAIDataset(Dataset):
             sample_data["ego_length_offset"] = torch.tensor(
                 vehicle_dimensions.rear_axle_to_bbox_center / vehicle_dimensions.length
             )
+
+        if self.avdi.reasoning_db is not None:
+            cot_data = self.avdi.get_reasoning_data(clip_id, t0_us)
+            sample_data.update(cot_data)
 
         if self.reshape_tensors_for_rl:
             image_frames = sample_data["image_frames"]

@@ -45,7 +45,7 @@ import copy
 import json
 from pathlib import Path
 
-from alpamayo_r1.utils.checkpoint_utils import prepare_output_dir, remap_targets, setup_checkpoint_output
+from alpamayo.utils.checkpoint_utils import prepare_output_dir, remap_targets, setup_checkpoint_output
 
 # _target_ prefix remapping: A1 -> A1.5
 _A1_TO_A15 = {

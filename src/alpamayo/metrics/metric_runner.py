@@ -15,7 +15,7 @@
 
 from typing import Any
 
-from alpamayo_r1.metrics.metric_api import Metric
+from alpamayo.metrics.metric_api import Metric
 
 
 class MetricRunner:

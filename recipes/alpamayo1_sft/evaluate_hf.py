@@ -28,12 +28,12 @@ from alpamayo1_sft.trainer import TrainingArguments
 from alpamayo1_sft.models.sft_base_model import TrainableReasoningVLA
 from alpamayo1_sft.models.sft_alpamayo_r1 import TrainableAlpamayoR1
 
-from alpamayo_r1.common import (
-    logging,
+from alpamayo.common import (
+    distributed,
     misc,
     wandb_utils,
-    distributed,
 )
+from alpamayo_r1.common import logging
 
 from alpamayo_r1.common.logging import setup_logging
 
