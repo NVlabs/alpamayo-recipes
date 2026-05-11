@@ -51,7 +51,7 @@ data:
         label_components: []
         generation_mode: true
 
-      _target_: alpamayo_r1.data.pai.PAIDataset
+      _target_: alpamayo.data.pai.PAIDataset
       _recursive_: false
     _target_: torch.utils.data.DataLoader
     num_workers: 1
