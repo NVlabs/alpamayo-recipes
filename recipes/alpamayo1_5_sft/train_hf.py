@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import importlib.resources
 import os
 import hydra
 import hydra.utils as hyu
@@ -23,8 +22,8 @@ from omegaconf import DictConfig, OmegaConf
 from alpamayo_r1.common import logging
 from alpamayo.common import misc
 
-from alpamayo1_sft.trainer import ReasoningVLA_Trainer
-from alpamayo1_sft.trainer import TrainingArguments
+from alpamayo1_5_sft.trainer import ReasoningVLA_Trainer
+from alpamayo1_5_sft.trainer import TrainingArguments
 
 from alpamayo.common import config_utils
 from alpamayo.common import wandb_utils

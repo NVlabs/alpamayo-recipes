@@ -1,0 +1,144 @@
+[2026-05-11 15:38:20,770][root][INFO] - cc -pthread -fno-strict-overflow -Wsign-compare -Wunreachable-code -DNDEBUG -g -O3 -Wall -O3 -fPIC -fPIC -c /tmp/tmpzor_k57o/test.c -o /tmp/tmpzor_k57o/test.o
+[2026-05-11 15:38:20,781][root][INFO] - cc -pthread /tmp/tmpzor_k57o/test.o -laio -o /tmp/tmpzor_k57o/a.out
+[2026-05-11 15:38:20,980][root][INFO] - cc -pthread -fno-strict-overflow -Wsign-compare -Wunreachable-code -DNDEBUG -g -O3 -Wall -O3 -fPIC -fPIC -c /tmp/tmpdi0k00m_/test.c -o /tmp/tmpdi0k00m_/test.o
+[2026-05-11 15:38:20,997][root][INFO] - cc -pthread /tmp/tmpdi0k00m_/test.o -L/usr/local/cuda -L/usr/local/cuda/lib64 -lcufile -o /tmp/tmpdi0k00m_/a.out
+[2026-05-11 15:38:21,023][root][INFO] - cc -pthread -fno-strict-overflow -Wsign-compare -Wunreachable-code -DNDEBUG -g -O3 -Wall -O3 -fPIC -fPIC -c /tmp/tmprtkl_avk/test.c -o /tmp/tmprtkl_avk/test.o
+[2026-05-11 15:38:21,033][root][INFO] - cc -pthread /tmp/tmprtkl_avk/test.o -laio -o /tmp/tmprtkl_avk/a.out
+[2026-05-11 15:38:21,717][train][INFO] - [rank: 0] Configs:
+[1m{[0m
+[2;32m│   [0m[32m'wandb'[0m: [1m{[0m
+[2;32m│   │   [0m[32m'key'[0m: [3;35mNone[0m,
+[2;32m│   │   [0m[32m'team'[0m: [32m'nvidia'[0m,
+[2;32m│   │   [0m[32m'project'[0m: [32m'alpamayo_verify'[0m,
+[2;32m│   │   [0m[32m'group'[0m: [32m'alpamayo_1_5_sft_stage1_nav_20260511_153821'[0m,
+[2;32m│   │   [0m[32m'name'[0m: [32m'alpamayo_1_5_sft_stage1_nav_20260511_153821'[0m,
+[2;32m│   │   [0m[32m'output_dir'[0m: [32m'output_stage1_nav'[0m
+[2;32m│   [0m[1m}[0m,
+[2;32m│   [0m[32m'data'[0m: [1m{[0m
+[2;32m│   │   [0m[32m'train_dataset'[0m: [1m{[0m
+[2;32m│   │   │   [0m[32m'vla_preprocess_args'[0m: [1m{[0m
+[2;32m│   │   │   │   [0m[32m'_target_'[0m: [32m'alpamayo_r1.processor.qwen_processor.get_preprocess_data_fn_from_model_config'[0m,
+[2;32m│   │   │   │   [0m[32m'components_order'[0m: [1m[[0m
+[2;32m│   │   │   │   │   [0m[32m'image'[0m,
+[2;32m│   │   │   │   │   [0m[32m'traj_history'[0m,
+[2;32m│   │   │   │   │   [0m[32m'route'[0m,
+[2;32m│   │   │   │   │   [0m[32m'prompt'[0m,
+[2;32m│   │   │   │   │   [0m[32m'traj_future'[0m
+[2;32m│   │   │   │   [0m[1m][0m,
+[2;32m│   │   │   │   [0m[32m'components_prompt'[0m: [1m[[0m
+[2;32m│   │   │   │   │   [0m[32m'traj_future'[0m
+[2;32m│   │   │   │   [0m[1m][0m,
+[2;32m│   │   │   │   [0m[32m'label_components'[0m: [1m[[0m
+[2;32m│   │   │   │   │   [0m[32m'traj_future'[0m
+[2;32m│   │   │   │   [0m[1m][0m,
+[2;32m│   │   │   │   [0m[32m'include_camera_ids'[0m: [3;92mTrue[0m,
+[2;32m│   │   │   │   [0m[32m'include_frame_nums'[0m: [3;92mTrue[0m,
+[2;32m│   │   │   │   [0m[32m'generation_mode'[0m: [3;91mFalse[0m
+[2;32m│   │   │   [0m[1m}[0m,
+[2;32m│   │   │   [0m[32m'_recursive_'[0m: [3;91mFalse[0m,
+[2;32m│   │   │   [0m[32m'_target_'[0m: [32m'alpamayo.data.pai_nav.PAIDatasetWithNav'[0m,
+[2;32m│   │   │   [0m[32m'local_dir'[0m: [32m'/home/yesfandiari/sample_data_1_5/'[0m,
+[2;32m│   │   │   [0m[32m'chunk_ids'[0m: [32m'0-99'[0m,
+[2;32m│   │   │   [0m[32m'use_default_keyframe'[0m: [3;92mTrue[0m,
+[2;32m│   │   │   [0m[32m'annotations_path'[0m: [32m'/home/yesfandiari/sample_data_1_5/'[0m
+[2;32m│   │   [0m[1m}[0m,
+[2;32m│   │   [0m[32m'val_dataset'[0m: [1m{[0m
+[2;32m│   │   │   [0m[32m'vla_preprocess_args'[0m: [1m{[0m
+[2;32m│   │   │   │   [0m[32m'_target_'[0m: [32m'alpamayo_r1.processor.qwen_processor.get_preprocess_data_fn_from_model_config'[0m,
+[2;32m│   │   │   │   [0m[32m'components_order'[0m: [1m[[0m
+[2;32m│   │   │   │   │   [0m[32m'image'[0m,
+[2;32m│   │   │   │   │   [0m[32m'traj_history'[0m,
+[2;32m│   │   │   │   │   [0m[32m'route'[0m,
+[2;32m│   │   │   │   │   [0m[32m'prompt'[0m,
+[2;32m│   │   │   │   │   [0m[32m'traj_future'[0m
+[2;32m│   │   │   │   [0m[1m][0m,
+[2;32m│   │   │   │   [0m[32m'components_prompt'[0m: [1m[[0m
+[2;32m│   │   │   │   │   [0m[32m'traj_future'[0m
+[2;32m│   │   │   │   [0m[1m][0m,
+[2;32m│   │   │   │   [0m[32m'label_components'[0m: [1m[[0m
+[2;32m│   │   │   │   │   [0m[32m'traj_future'[0m
+[2;32m│   │   │   │   [0m[1m][0m,
+[2;32m│   │   │   │   [0m[32m'include_camera_ids'[0m: [3;92mTrue[0m,
+[2;32m│   │   │   │   [0m[32m'include_frame_nums'[0m: [3;92mTrue[0m,
+[2;32m│   │   │   │   [0m[32m'generation_mode'[0m: [3;92mTrue[0m
+[2;32m│   │   │   [0m[1m}[0m,
+[2;32m│   │   │   [0m[32m'_recursive_'[0m: [3;91mFalse[0m,
+[2;32m│   │   │   [0m[32m'_target_'[0m: [32m'alpamayo.data.pai_nav.PAIDatasetWithNav'[0m,
+[2;32m│   │   │   [0m[32m'local_dir'[0m: [32m'???'[0m,
+[2;32m│   │   │   [0m[32m'chunk_ids'[0m: [32m'99-100'[0m,
+[2;32m│   │   │   [0m[32m'use_default_keyframe'[0m: [3;92mTrue[0m,
+[2;32m│   │   │   [0m[32m'annotations_path'[0m: [32m'???'[0m
+[2;32m│   │   [0m[1m}[0m,
+[2;32m│   │   [0m[32m'collate_fn'[0m: [1m{[0m
+[2;32m│   │   │   [0m[32m'_target_'[0m: [32m'alpamayo_r1.processor.qwen_processor.collate_fn_from_model_config'[0m,
+[2;32m│   │   │   [0m[32m'_partial_'[0m: [3;92mTrue[0m
+[2;32m│   │   [0m[1m}[0m
+[2;32m│   [0m[1m}[0m,
+[2;32m│   [0m[32m'paths'[0m: [1m{[0m
+[2;32m│   │   [0m[32m'output_dir'[0m: [32m'output_stage1_nav'[0m
+[2;32m│   [0m[1m}[0m,
+[2;32m│   [0m[32m'callbacks'[0m: [1m{[0m[1m}[0m,
+[2;32m│   [0m[32m'evaluate'[0m: [1m{[0m
+[2;32m│   │   [0m[32m'max_eval_steps'[0m: [1;36m-1[0m,
+[2;32m│   │   [0m[32m'torch_dtype'[0m: [32m'bfloat16'[0m,
+[2;32m│   │   [0m[32m'metric_runner'[0m: [1m{[0m
+[2;32m│   │   │   [0m[32m'_target_'[0m: [32m'alpamayo.metrics.metric_runner.MetricRunner'[0m,
+[2;32m│   │   │   [0m[32m'metrics'[0m: [1m[[0m
+[2;32m│   │   │   │   [0m[1m{[0m
+[2;32m│   │   │   │   │   [0m[32m'_target_'[0m: [32m'alpamayo.metrics.metric_api.ReasoningSampler'[0m,
+[2;32m│   │   │   │   │   [0m[32m'num_traj_sets'[0m: [1;36m1[0m,
+[2;32m│   │   │   │   │   [0m[32m'top_p'[0m: [1;36m0.98[0m,
+[2;32m│   │   │   │   │   [0m[32m'temperature'[0m: [1;36m0.6[0m,
+[2;32m│   │   │   │   │   [0m[32m'traj_only_generation'[0m: [3;91mFalse[0m,
+[2;32m│   │   │   │   │   [0m[32m'max_generation_length'[0m: [1;36m256[0m
+[2;32m│   │   │   │   [0m[1m}[0m,
+[2;32m│   │   │   │   [0m[1m{[0m
+[2;32m│   │   │   │   │   [0m[32m'_target_'[0m: [32m'alpamayo.metrics.metric_api.DistanceMetrics'[0m
+[2;32m│   │   │   │   [0m[1m}[0m
+[2;32m│   │   │   [0m[1m][0m
+[2;32m│   │   [0m[1m}[0m,
+[2;32m│   │   [0m[32m'eval_ckpt'[0m: [3;35mNone[0m
+[2;32m│   [0m[1m}[0m,
+[2;32m│   [0m[32m'trainer'[0m: [1m{[0m
+[2;32m│   │   [0m[32m'output_dir'[0m: [32m'output_stage1_nav'[0m,
+[2;32m│   │   [0m[32m'per_device_train_batch_size'[0m: [1;36m1[0m,
+[2;32m│   │   [0m[32m'per_device_eval_batch_size'[0m: [1;36m2[0m,
+[2;32m│   │   [0m[32m'gradient_accumulation_steps'[0m: [1;36m4[0m,
+[2;32m│   │   [0m[32m'learning_rate'[0m: [1;36m1e-05[0m,
+[2;32m│   │   [0m[32m'warmup_steps'[0m: [1;36m500[0m,
+[2;32m│   │   [0m[32m'logging_steps'[0m: [1;36m5[0m,
+[2;32m│   │   [0m[32m'save_steps'[0m: [1;36m500[0m,
+[2;32m│   │   [0m[32m'save_total_limit'[0m: [1;36m2[0m,
+[2;32m│   │   [0m[32m'num_train_epochs'[0m: [1;36m100000[0m,
+[2;32m│   │   [0m[32m'bf16'[0m: [3;92mTrue[0m,
+[2;32m│   │   [0m[32m'dataloader_pin_memory'[0m: [3;92mTrue[0m,
+[2;32m│   │   [0m[32m'dataloader_num_workers'[0m: [1;36m2[0m,
+[2;32m│   │   [0m[32m'remove_unused_columns'[0m: [3;91mFalse[0m,
+[2;32m│   │   [0m[32m'report_to'[0m: [32m'wandb'[0m,
+[2;32m│   │   [0m[32m'lr_scheduler_type'[0m: [32m'cosine_warmup_with_min_lr'[0m,
+[2;32m│   │   [0m[32m'lr_scheduler_kwargs'[0m: [1m{[0m
+[2;32m│   │   │   [0m[32m'min_lr'[0m: [1;36m1e-06[0m
+[2;32m│   │   [0m[1m}[0m,
+[2;32m│   │   [0m[32m'deepspeed'[0m: [32m'configs/deepspeed/zero2.json'[0m,
+[2;32m│   │   [0m[32m'gradient_checkpointing'[0m: [3;92mTrue[0m,
+[2;32m│   │   [0m[32m'gradient_checkpointing_kwargs'[0m: [1m{[0m
+[2;32m│   │   │   [0m[32m'use_reentrant'[0m: [3;91mFalse[0m
+[2;32m│   │   [0m[1m}[0m,
+[2;32m│   │   [0m[32m'lr_multiplier'[0m: [1m{[0m
+[2;32m│   │   │   [0m[32m'vlm.model.visual'[0m: [1;36m0.1[0m
+[2;32m│   │   [0m[1m}[0m,
+[2;32m│   │   [0m[32m'ddp_find_unused_parameters'[0m: [3;91mFalse[0m
+[2;32m│   [0m[1m}[0m,
+[2;32m│   [0m[32m'task_name'[0m: [32m'alpamayo_1_5_sft_stage1_nav'[0m,
+[2;32m│   [0m[32m'run_name'[0m: [32m'alpamayo_1_5_sft_stage1_nav_20260511_153821'[0m,
+[2;32m│   [0m[32m'model'[0m: [1m{[0m
+[2;32m│   │   [0m[32m'_target_'[0m: [32m'alpamayo1_5_sft.models.sft_base_model.TrainableReasoningVLA.from_alpamayo_checkpoint'[0m,
+[2;32m│   │   [0m[32m'checkpoint_path'[0m: [32m'/home/yesfandiari/model_1/'[0m,
+[2;32m│   │   [0m[32m'vlm_name_or_path'[0m: [32m'Qwen/Qwen3-VL-8B-Instruct'[0m
+[2;32m│   [0m[1m}[0m
+[1m}[0m
+
+[2026-05-11 15:40:15,450][alpamayo_r1.models.base_model][INFO] - Total parameters: 8,797,933,808
+[2026-05-11 15:40:15,450][alpamayo_r1.models.base_model][INFO] - Trainable parameters: 8,797,933,808
+[2026-05-11 15:40:15,761][alpamayo1_5_sft.models.sft_base_model][INFO] - [rank: 0] Loaded 750 VLM tensors from /home/yesfandiari/model_1 (missing=0, unexpected=0)
+[2026-05-11 15:40:15,830][alpamayo.data.pai_utils][INFO] - [rank: 0] Loading from /home/yesfandiari/sample_data_1_5/ with chunk_ids: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98]

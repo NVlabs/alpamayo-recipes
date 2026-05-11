@@ -1,0 +1,6 @@
+key: null
+team: nvidia
+project: alpamayo_verify
+group: ${run_name}
+name: ${run_name}
+output_dir: ${paths.output_dir}

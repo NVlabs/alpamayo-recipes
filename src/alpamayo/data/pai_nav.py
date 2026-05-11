@@ -31,7 +31,7 @@ Example JSON (``nav_demo_samples.json``)::
 import json
 from typing import Any
 
-from alpamayo_r1.data.pai import PAIDataset
+from alpamayo.data.pai import PAIDataset
 from alpamayo_r1.load_physical_aiavdataset import load_physical_aiavdataset
 
 

@@ -55,7 +55,7 @@ from hydra.utils import instantiate
 from omegaconf import OmegaConf
 from PIL import Image
 
-import alpamayo_r1.common.constants as constants
+import alpamayo.common.constants as constants
 from alpamayo_r1.common import logging
 
 logger = logging.RankedLogger(__name__, rank_zero_only=False)

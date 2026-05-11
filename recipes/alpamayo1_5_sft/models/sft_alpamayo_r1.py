@@ -19,7 +19,7 @@ from typing import Any
 import einops
 import torch
 
-from alpamayo1_sft.models.sft_base_model import ReasoningVLAOutput, load_alpamayo1_vlm
+from alpamayo1_5_sft.models.sft_base_model import ReasoningVLAOutput, load_alpamayo1_vlm
 from alpamayo_r1.models.base_model import IGNORE_INDEX
 from alpamayo_r1.models.alpamayo_r1 import AlpamayoR1
 from alpamayo_r1.config import AlpamayoR1Config

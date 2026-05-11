@@ -1,5 +1,5 @@
 defaults:
-  # - /wandb: default # uncomment to enable W&B logging
+  - /wandb: default # uncomment to enable W&B logging
   - /vla_processor@data.train_dataset.vla_preprocess_args: default
   - /vla_processor@data.val_dataset.vla_preprocess_args: default
 data:
@@ -53,7 +53,7 @@ trainer:
   dataloader_pin_memory: True
   dataloader_num_workers: 2
   remove_unused_columns: False
-  report_to: none # change to "wandb" when enabling W&B
+  report_to: wandb # change to "wandb" when enabling W&B
   lr_scheduler_type: cosine_warmup_with_min_lr
   lr_scheduler_kwargs:
     min_lr: 1e-6

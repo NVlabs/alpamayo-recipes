@@ -1,0 +1,36 @@
+defaults:
+  - sft_base
+  - /models/ar1_5_base@model
+  - override /vla_processor@data.train_dataset.vla_preprocess_args: nav
+  - override /vla_processor@data.val_dataset.vla_preprocess_args: nav
+  - _self_
+
+data:
+  train_dataset:
+    _target_: alpamayo.data.pai_nav.PAIDatasetWithNav
+    _recursive_: false
+    local_dir: /home/yesfandiari/sample_data_1_5/
+    annotations_path: /home/yesfandiari/sample_data_1_5/
+    vla_preprocess_args:
+      generation_mode: false
+  val_dataset:
+    _target_: alpamayo.data.pai_nav.PAIDatasetWithNav
+    _recursive_: false
+    local_dir: ???
+    annotations_path: ???
+    vla_preprocess_args:
+      generation_mode: true
+
+trainer:
+  lr_multiplier:
+    vlm.model.visual: 0.1
+  ddp_find_unused_parameters: false
+  gradient_accumulation_steps: 4
+  learning_rate: 1e-5
+  warmup_steps: 500
+  num_train_epochs: 100000
+paths:
+  output_dir: output_stage1_nav
+evaluate:
+  eval_ckpt: null
+task_name: alpamayo_1_5_sft_stage1_nav

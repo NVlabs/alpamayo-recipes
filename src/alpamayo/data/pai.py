@@ -16,7 +16,7 @@
 from typing import Any
 
 import torch
-from alpamayo_r1.data.pai_utils import PhysicalAIAVDatasetLocalInterface
+from alpamayo.data.pai_utils import PhysicalAIAVDatasetLocalInterface
 from alpamayo_r1.load_physical_aiavdataset import load_physical_aiavdataset
 from hydra.utils import instantiate
 from omegaconf import OmegaConf

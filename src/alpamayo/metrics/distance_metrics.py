@@ -18,7 +18,7 @@ from typing import Iterable
 import torch
 
 from alpamayo_r1.geometry import coordinates
-from alpamayo_r1.metrics.metric_utils import summarize_metric
+from alpamayo.metrics.metric_utils import summarize_metric
 
 
 def compute_ade(

@@ -23,10 +23,10 @@ import torch
 
 from omegaconf import DictConfig, OmegaConf
 from tqdm.auto import tqdm
-from alpamayo1_sft.trainer import ReasoningVLA_Trainer
-from alpamayo1_sft.trainer import TrainingArguments
-from alpamayo1_sft.models.sft_base_model import TrainableReasoningVLA
-from alpamayo1_sft.models.sft_alpamayo_r1 import TrainableAlpamayoR1
+from alpamayo1_5_sft.trainer import ReasoningVLA_Trainer
+from alpamayo1_5_sft.trainer import TrainingArguments
+from alpamayo1_5_sft.models.sft_base_model import TrainableReasoningVLA
+from alpamayo1_5_sft.models.sft_alpamayo_r1 import TrainableAlpamayoR1
 
 from alpamayo.common import (
     distributed,

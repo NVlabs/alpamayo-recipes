@@ -53,7 +53,7 @@ alpamayo_r1 = { git = "https://github.com/NVlabs/alpamayo.git" }
 alpamayo-recipes = { path = "../../src", editable = true }
 
 [tool.alpamayo]
-chat_template_version = "r1"
+chat_template_version = "r1_5"
 
 [tool.ruff]
 line-length = 100
