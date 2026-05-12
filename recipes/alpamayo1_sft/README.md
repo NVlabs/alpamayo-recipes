@@ -148,7 +148,7 @@ Example log lines:
 
 ### Stage 1 (CoC reasoining enabled)
 
-Note that in the sample scenario provided above, CoC labels are not used. Enabling CoC requires **two** pieces to be in sync — miss any one and the run aborts with `AssertionError: cot not found in data but 'cot' in components_order`.
+Note that in the sample scenario provided above, CoC labels are not used. Enabling CoC requires **two** pieces to be in sync — miss any one and the run aborts with either `AssertionError: cot not found in data but 'cot' in components_order` or `ValueError: Event timestamp 5100000 not found for <clip_id> in reasoning_db`.
 
 **1. Processor config** — update [configs/vla_processor/default.yaml](./configs/vla_processor/default.yaml):
 
@@ -158,7 +158,7 @@ components_prompt: ["cot", "traj_future"]
 label_components: ["cot", "traj_future"]
 ```
 
-**2. Dataset config** — Verify with `ls /path/to/pai_dataset/reasoning/ood_reasoning.parquet /path/to/pai_dataset/clip_index_reasoning_mini.parquet` (both files must exist), then point train/val datasets at the reasoning parquet and the filtered clip index. Either edit [configs/sft_base.yaml](./configs/sft_base.yaml) (add `reasoning_metadata` and `clip_index_metadata` under both `train_dataset` and `val_dataset`), or **append** them on the launch command. Because these keys are not in the shipped YAML, the override must be prefixed with `+` (Hydra struct mode rejects non-existent keys otherwise — error: `Key 'reasoning_metadata' is not in struct`):
+**2. Dataset config** — Verify with `ls /path/to/pai_dataset/reasoning/ood_reasoning.parquet /path/to/pai_dataset/clip_index_reasoning_mini.parquet` (both files must exist), then (a) point train/val datasets at the reasoning parquet, (b) point them at the filtered clip index, and (c) disable the global single-keyframe shortcut so each sample's `t0_us` is drawn from the per-clip reasoning event timestamps. Either edit [configs/sft_base.yaml](./configs/sft_base.yaml) (add `reasoning_metadata` and `clip_index_metadata`, set `use_default_keyframe: false` under both `train_dataset` and `val_dataset`), or **append/override** them on the launch command. Note the `+` prefix on the new keys (Hydra struct mode rejects non-existent keys otherwise — error: `Key 'reasoning_metadata' is not in struct`); `use_default_keyframe` already exists in the YAML so it takes no `+`. Make sure you also adjust `chunk_ids` to your downloaded range in [configs/sft_base.yaml](./configs/sft_base.yaml). Then run:
 
 ```bash
 torchrun --nproc_per_node 8 \
@@ -171,12 +171,14 @@ torchrun --nproc_per_node 8 \
   +data.train_dataset.reasoning_metadata=reasoning/ood_reasoning.parquet \
   +data.val_dataset.reasoning_metadata=reasoning/ood_reasoning.parquet \
   +data.train_dataset.clip_index_metadata=clip_index_reasoning_mini.parquet \
-  +data.val_dataset.clip_index_metadata=clip_index_reasoning_mini.parquet
+  +data.val_dataset.clip_index_metadata=clip_index_reasoning_mini.parquet \
+  data.train_dataset.use_default_keyframe=false \
+  data.val_dataset.use_default_keyframe=false
 ```
 
 > The reasoning / clip-index paths are **relative to `data.*.local_dir`** — the dataset joins them onto `local_dir` internally. Pass `reasoning/ood_reasoning.parquet`, not the absolute path.
 
-The dataset only attaches a `cot` field to samples when `reasoning_metadata` is set, and only enumerates reasoning-bearing clips when `clip_index_metadata` points at the filtered index — both are required.
+Note: `reasoning_metadata` lets the dataset attach a `cot` field; `clip_index_metadata` ensures only reasoning-bearing clips are enumerated (otherwise non-reasoning clips reach the chat template without `cot`); `use_default_keyframe=false` makes `t0_us` come from each clip's real reasoning-event timestamp instead of the global `DEFAULT_T0_US = 5_100_000` (otherwise `get_reasoning_data` raises the `5100000 not found` ValueError above).
 
 ## Run Stage 2 Fine-tuning 
 

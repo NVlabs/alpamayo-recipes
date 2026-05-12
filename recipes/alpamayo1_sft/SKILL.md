@@ -384,32 +384,46 @@ After this, `$PAI_DIR` must contain both `reasoning/ood_reasoning.parquet`
 and `clip_index_reasoning_mini.parquet`. Verify with
 `ls "$PAI_DIR/reasoning/" "$PAI_DIR/clip_index_reasoning_mini.parquet"`.
 
-**3. Dataset config side** — the train/val datasets must point at the
-reasoning parquet *and* at the filtered clip index. Either edit
+**3. Dataset config side** — the train/val datasets must (a) point at the
+reasoning parquet, (b) point at the filtered clip index, AND (c) disable
+the single-keyframe shortcut so each sample's `t0_us` comes from the
+per-clip reasoning event timestamps. Either edit
 [configs/sft_base.yaml](configs/sft_base.yaml) (add `reasoning_metadata` and
-`clip_index_metadata` to both `train_dataset` and `val_dataset`), or append
-them on the CLI. Because these keys are **not** present in the shipped
-YAML, the override must be prefixed with `+` (Hydra struct mode rejects
-non-existent keys otherwise — error: `Key 'reasoning_metadata' is not in
-struct ... To append to your config use +data.train_dataset...`):
+`clip_index_metadata`, set `use_default_keyframe: false` under both
+`train_dataset` and `val_dataset`), or override on the CLI. Note the `+`
+prefix on the **new** keys (Hydra struct mode rejects non-existent keys
+otherwise — error: `Key 'reasoning_metadata' is not in struct ... To append
+to your config use +data.train_dataset...`); `use_default_keyframe` already
+exists in the YAML so it takes no `+`:
 
 ```bash
 torchrun ... \
   +data.train_dataset.reasoning_metadata=reasoning/ood_reasoning.parquet \
   +data.val_dataset.reasoning_metadata=reasoning/ood_reasoning.parquet \
   +data.train_dataset.clip_index_metadata=clip_index_reasoning_mini.parquet \
-  +data.val_dataset.clip_index_metadata=clip_index_reasoning_mini.parquet
+  +data.val_dataset.clip_index_metadata=clip_index_reasoning_mini.parquet \
+  data.train_dataset.use_default_keyframe=false \
+  data.val_dataset.use_default_keyframe=false
 ```
 
 > The reasoning / clip-index paths are **relative to `data.*.local_dir`**
 > (the dataset joins them onto `local_dir` internally). Pass
 > `reasoning/ood_reasoning.parquet`, **not** the absolute path.
 
-Why all three are required (from [src/alpamayo/data/pai.py:139](../../src/alpamayo/data/pai.py#L139)):
-the dataset only attaches a `cot` field when `reasoning_metadata` is set
-(otherwise `self.avdi.reasoning_db is None`). And if the clip index still
-lists every clip in the chunk (not just reasoning-bearing ones), the non-
-reasoning samples reach the processor without a `cot` and trip the assert.
+Why all four are required:
+
+- `reasoning_metadata` sets `self.avdi.reasoning_db` so the dataset can
+  attach a `cot` field (see [src/alpamayo/data/pai.py:124](../../src/alpamayo/data/pai.py#L124)).
+- `clip_index_metadata` points at the filtered index so the dataset
+  enumerates only reasoning-bearing clips — without it, the dataset still
+  iterates every clip in the chunk, including ones with no reasoning.
+- `use_default_keyframe=false` makes `t0_us` come from
+  `get_clip_key_frame(clip_id)` (a real event timestamp) instead of the
+  global `DEFAULT_T0_US = 5_100_000`. Otherwise the lookup
+  `get_reasoning_data(clip_id, 5_100_000)` raises
+  `ValueError: Event timestamp 5100000 not found for <clip_id> in reasoning_db`,
+  since the reasoning events live at per-clip times, not at the fixed
+  5.1 s default.
 
 ### Warnings that are noise (do not treat as errors)
 
@@ -720,8 +734,9 @@ without it, `InstantiationException` hides the real cause behind a one-liner.
 |---------|------------|-----|
 | `InstantiationException("Error locating target 'alpamayo_r1.processor.qwen_processor.get_preprocess_data_fn_from_model_config'")` | The installed `alpamayo_r1` doesn't export that symbol — the venv is stale or wasn't fully synced | Verify with `python -c "from alpamayo_r1.processor.qwen_processor import get_preprocess_data_fn_from_model_config"`; re-run `uv sync --active` |
 | `InstantiationException` on `alpamayo.data.pai.PAIDataset` | The `alpamayo-recipes` editable install (`../../src`) didn't take | `uv pip show alpamayo-recipes` → re-run `uv sync --active` |
-| `AssertionError: cot not found in data but 'cot' in components_order` | You enabled CoC on the processor (`vla_processor/default.yaml`) but didn't wire the dataset side (`reasoning_metadata` + `clip_index_metadata`) | See [Enable CoC reasoning (Stage 1)](#enable-coc-reasoning-stage-1) — all **three** pieces (processor config, dataset on disk with `--num-reasoning-clips`, dataset config pointing at the filtered index) must be set together |
+| `AssertionError: cot not found in data but 'cot' in components_order` | You enabled CoC on the processor (`vla_processor/default.yaml`) but didn't wire the dataset side (`reasoning_metadata` + `clip_index_metadata` + `use_default_keyframe=false`) | See [Enable CoC reasoning (Stage 1)](#enable-coc-reasoning-stage-1) — all **four** pieces (processor config, dataset on disk with `--num-reasoning-clips`, dataset config pointing at the filtered index, default-keyframe disabled) must be set together |
 | `Key 'reasoning_metadata' is not in struct ... Could not override 'data.train_dataset.reasoning_metadata'` | Hydra struct mode rejects setting keys that aren't in the shipped YAML | Prefix the override with `+` to **append** rather than override: `+data.train_dataset.reasoning_metadata=...`. Same for `clip_index_metadata` and any other key not already in `sft_base.yaml` |
+| `ValueError: Event timestamp 5100000 not found for <clip_id> in reasoning_db` | CoC is enabled and `reasoning_metadata` is wired, but `use_default_keyframe: true` is still in effect — `t0_us` is forced to the global 5.1 s keyframe, which doesn't match the per-clip reasoning event timestamps | Override `data.train_dataset.use_default_keyframe=false` and `data.val_dataset.use_default_keyframe=false` (no `+` — the key is already in `sft_base.yaml`). See [Enable CoC reasoning (Stage 1)](#enable-coc-reasoning-stage-1) |
 | `wandb.errors.CommError: 403 ... permission denied ... upsertBucket` | Account not in the wandb entity/project from `configs/wandb/default.yaml` | Change `team`/`project`, override on CLI, or `WANDB_MODE=disabled` |
 | `Flash Attention 2 only supports torch.float16 and torch.bfloat16 dtypes ...` repeated per submodule | Spurious transformers warning misreading the current dtype | **Ignore** — bfloat16 is supported; trainer is configured correctly |
 | `You are attempting to use Flash Attention 2 without specifying a torch dtype` | Same as above | Ignore |
