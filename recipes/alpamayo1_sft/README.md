@@ -99,7 +99,7 @@ All commands below should be run from **`alpamayo-recipes/recipes/alpamayo1_sft/
 Set `checkpoint_path` in [configs/models/ar1_base.yaml](configs/models/ar1_base.yaml), or pass
 `model.checkpoint_path=<path>` on the command line when launching Stage 1 (see below).
 
-## Run Stage 1 fine-tuning
+## Run Stage 1 Fine-tuning
 
 > Alpamayo-1 uses Hydra, so you can extend or override configuration in a structured way.
 
@@ -112,19 +112,11 @@ Set `checkpoint_path` in [configs/models/ar1_base.yaml](configs/models/ar1_base.
 After downloading PAI, set `local_dir` in [configs/sft_base.yaml](configs/sft_base.yaml) to the dataset root and
 `chunk_ids` to a range string such as `"0-10"` in your Hydra config or on the command line.
 
-### Training stages
-
-Training uses a two-stage pipeline for convergence and stability.
-
-1. **Stage 1:** Fine-tune the VLM (`base_model`) to emit discrete trajectory tokens.
-2. **Stage 2:** Freeze the Stage-1 VLM and train the action expert (trajectory diffusion) for
-   continuous trajectories.
-
 ### Hyperparameters
 
 Adjust settings such as `dataloader_num_workers` or the learning rate in the config as needed.
 
-#### Stage 1
+### Stage 1 (CoC reasoining disabled)
 
 > Stage 1 fine-tunes the full VLM; DeepSpeed ZeRO-2 is enabled by default in the bundled config
 > for memory-efficient multi-GPU training.
@@ -154,9 +146,11 @@ Example log lines:
 ```
 
 
-##### Enable CoC reasoning for stage 1
+### Stage 1 (CoC reasoining enabled)
 
-Note that in the sample scenario provided, CoC labels are not used. To enable CoC, update the [default.yaml](./configs/vla_processor/default.yaml) as follows:
+Note that in the sample scenario provided above, CoC labels are not used. Enabling CoC requires **two** pieces to be in sync — miss any one and the run aborts with `AssertionError: cot not found in data but 'cot' in components_order`.
+
+**1. Processor config** — update [configs/vla_processor/default.yaml](./configs/vla_processor/default.yaml):
 
 ```yaml
 components_order: ["image", "traj_history", "prompt", "cot", "traj_future"]
@@ -164,7 +158,27 @@ components_prompt: ["cot", "traj_future"]
 label_components: ["cot", "traj_future"]
 ```
 
-#### Stage 2
+**2. Dataset config** — Verify with `ls /path/to/pai_dataset/reasoning/ood_reasoning.parquet /path/to/pai_dataset/clip_index_reasoning_mini.parquet` (both files must exist), then point train/val datasets at the reasoning parquet and the filtered clip index. Either edit [configs/sft_base.yaml](./configs/sft_base.yaml) (add `reasoning_metadata` and `clip_index_metadata` under both `train_dataset` and `val_dataset`), or **append** them on the launch command. Because these keys are not in the shipped YAML, the override must be prefixed with `+` (Hydra struct mode rejects non-existent keys otherwise — error: `Key 'reasoning_metadata' is not in struct`):
+
+```bash
+torchrun --nproc_per_node 8 \
+  -m alpamayo1_sft.train_hf \
+  --config-path pkg://alpamayo1_sft/configs \
+  --config-name sft_stage1 \
+  model.checkpoint_path=<path/to/Alpamayo-R1-10B> \
+  data.train_dataset.local_dir=<path/to/pai_dataset> \
+  data.val_dataset.local_dir=<path/to/pai_dataset> \
+  +data.train_dataset.reasoning_metadata=reasoning/ood_reasoning.parquet \
+  +data.val_dataset.reasoning_metadata=reasoning/ood_reasoning.parquet \
+  +data.train_dataset.clip_index_metadata=clip_index_reasoning_mini.parquet \
+  +data.val_dataset.clip_index_metadata=clip_index_reasoning_mini.parquet
+```
+
+> The reasoning / clip-index paths are **relative to `data.*.local_dir`** — the dataset joins them onto `local_dir` internally. Pass `reasoning/ood_reasoning.parquet`, not the absolute path.
+
+The dataset only attaches a `cot` field to samples when `reasoning_metadata` is set, and only enumerates reasoning-bearing clips when `clip_index_metadata` points at the filtered index — both are required.
+
+## Run Stage 2 Fine-tuning 
 
 Stage 2 adds the trajectory diffusion expert and keeps the Stage-1 VLM frozen.
 
@@ -188,7 +202,7 @@ Loss curve:
 
 ![loss.png](loss.png)
 
-### Evaluation
+## Evaluation
 
 Evaluate the Stage-2 checkpoint against `val_dataset`:
 
