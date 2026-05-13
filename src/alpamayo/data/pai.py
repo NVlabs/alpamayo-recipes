@@ -121,6 +121,10 @@ class PAIDataset(Dataset):
             if key.startswith("ego_"):
                 sample_data[key] = sample_data[key].squeeze(0)
 
+        if self.avdi.reasoning_db is not None:
+            cot_data = self.avdi.get_reasoning_data(clip_id, t0_us)
+            sample_data.update(cot_data)
+
         if self.vla_preprocess_func is not None:
             sample_data["tokenized_data"] = self.vla_preprocess_func(data=sample_data)
 
