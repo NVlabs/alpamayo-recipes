@@ -121,13 +121,6 @@ class PAIDataset(Dataset):
             if key.startswith("ego_"):
                 sample_data[key] = sample_data[key].squeeze(0)
 
-        if self.avdi.reasoning_db is not None:
-            cot_data = self.avdi.get_reasoning_data(clip_id, t0_us)
-            sample_data.update(cot_data)
-
-        if self.vla_preprocess_func is not None:
-            sample_data["tokenized_data"] = self.vla_preprocess_func(data=sample_data)
-
         if self.include_extr_intr:
             sample_data["extr"] = self.avdi.get_clip_feature(clip_id, "sensor_extrinsics")
             sample_data["intr"] = self.avdi.get_clip_feature(clip_id, "camera_intrinsics")
@@ -139,10 +132,6 @@ class PAIDataset(Dataset):
             sample_data["ego_length_offset"] = torch.tensor(
                 vehicle_dimensions.rear_axle_to_bbox_center / vehicle_dimensions.length
             )
-
-        if self.avdi.reasoning_db is not None:
-            cot_data = self.avdi.get_reasoning_data(clip_id, t0_us)
-            sample_data.update(cot_data)
 
         if self.reshape_tensors_for_rl:
             image_frames = sample_data["image_frames"]
@@ -163,6 +152,10 @@ class PAIDataset(Dataset):
             sample_data["camera_indices"] = camera_indices
             sample_data["absolute_timestamps"] = absolute_timestamps
             sample_data["relative_timestamps"] = relative_timestamps
+
+        if self.avdi.reasoning_db is not None:
+            cot_data = self.avdi.get_reasoning_data(clip_id, t0_us)
+            sample_data.update(cot_data)
 
         if self.vla_preprocess_func is not None:
             sample_data["tokenized_data"] = self.vla_preprocess_func(data=sample_data)
