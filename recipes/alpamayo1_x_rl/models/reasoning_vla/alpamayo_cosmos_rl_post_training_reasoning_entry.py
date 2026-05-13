@@ -55,7 +55,7 @@ except Exception as e:
 # ---------------------------------------------------------------------------
 from alpamayo1_x_rl.models._spec import ModelSpec
 from alpamayo1_x_rl.models.reasoning_vla.cosmos_wrapper import ReasoningVLACosmos
-from alpamayo1_x_rl.models.reasoning_vla.data_packer import ReasoningVLADataPacker
+from alpamayo1_x_rl.models.reasoning_vla.data_packer import RVLADataPacker
 from alpamayo1_x_rl.models.reasoning_vla.rollout import ReasoningVLAVllmRollout  # noqa: F401 (Cosmos registry)
 from alpamayo1_x_rl.models.reasoning_vla.trainer import ReasoningVLAGRPOTrainer  # noqa: F401 (Cosmos registry)
 from alpamayo1_x_rl.models.reasoning_vla.weight_mapper import ReasoningVLAWeightMapper
@@ -82,7 +82,7 @@ def _reasoning_vla_reward_fn(to_be_evaluated, reference=None, *args, config=None
 REASONING_VLA_SPEC = ModelSpec(
     cosmos_wrapper=ReasoningVLACosmos,
     weight_mapper=ReasoningVLAWeightMapper,
-    data_packer_cls=ReasoningVLADataPacker,
+    data_packer_cls=RVLADataPacker,
     reward_fn=_reasoning_vla_reward_fn,
     hydra_config_path="hydra_configs",
     hydra_config_name="alpamayo1_5_rvla_rl_pai",
