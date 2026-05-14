@@ -16,7 +16,11 @@ Training uses a two-stage pipeline for convergence and stability:
 1. **Stage 1:** Fine-tune the VLM (`base_model`) on supervised targets. For navigation, the target is the future trajectory conditioned on route instructions. For LingoQA VQA, the target is the answer text.
 2. **Stage 2:** Freeze the Stage-1 VLM and train the action expert (trajectory diffusion) for continuous trajectories. This stage applies to trajectory prediction fine-tuning, such as the navigation-conditioned setup; VQA-only fine-tuning does not use Stage 2.
 
-Alpamayo 1.5 uses Hydra, so you can extend or override configuration in a structured way. To log runs to W&B, enable the `wandb` default in [sft_base.yaml](./configs/sft_base.yaml), and set `report_to: wandb` under `trainer` if needed. Then fill in `team` and `project` in [wandb/default.yaml](./configs/wandb/default.yaml), and have your W&B API key available when training starts.
+Alpamayo 1.5 uses Hydra, so you can extend or override configuration in a structured way.
+
+> **Weights & Biases:** To log runs to W&B, uncomment the `wandb` default, and set `report_to: wandb` under
+> `trainer` in [configs/sft_base.yaml](./configs/sft_base.yaml). Additionally, fill in `team` and `project` in
+> [configs/wandb/default.yaml](./configs/wandb/default.yaml), and have your W&B API key available when training starts.
 
 ## Installation
 
@@ -181,3 +185,21 @@ torchrun --nproc_per_node 8 -m alpamayo1_5_sft.train_hf \
 
 Because LingoQA was included in training for the released Alpamayo 1.5 model, the loss should remain low and stable.
 ![loss](./loss_A1-5_lingoqa.png)
+
+## Evaluation
+
+Evaluate the Stage-2 checkpoint against `val_dataset`:
+
+```bash
+cd $YOUR_HOME/alpamayo-recipes/recipes/alpamayo1_5_sft
+torchrun --nproc_per_node 8 \
+  -m alpamayo1_5_sft.evaluate_hf \
+  --config-path pkg://alpamayo1_5_sft/configs \
+  --config-name sft_stage2 \
+  evaluate.eval_ckpt=<path/to/output_stage2/checkpoint-xxxx> \
+  data.val_dataset.local_dir=<path/to/pai_dataset>
+```
+
+`evaluate_hf.py` auto-detects the model class (`TrainableReasoningVLA` vs `TrainableAlpamayoR1`) and routes `evaluate.eval_ckpt` into the corresponding field (`model.checkpoint_path` for Stage 1, `model.pretrained_model_name_or_path` for Stage 2). Reported metrics include `val/metric/ade`, `val/metric/min_ade`, `val/metric/corner_distance`, and per-horizon breakdowns (`by_t=0.5`, `1.0`, `3.0`, `5.0`).
+
+> Eval is intended for trajectory checkpoints (Stage 2 produced from a navigation Stage-1 run). VQA Stage-1 outputs do not have a trajectory target and aren't covered by the distance metrics above.
