@@ -734,7 +734,7 @@ climb on the same single clip — that's the wiring check before scaling.
 
 | Symptom | Root cause | Fix |
 |---------|------------|-----|
-| `NameError: name '_collect_targets' is not defined` (or any single-letter typo in a `scripts/convert_*.py`) | Stale clone vs. recipe code drift | `git pull`; verify with `grep -n "collect_targets" scripts/convert_release_config_to_training.py` |
+| Hydra CLI override `<key>=None` is silently parsed as the **string** `"None"` (not Python `None`) — common symptom: a path-typed config field gets `"/<dir>/None"` joined onto it and the dataset complains the file doesn't exist | YAML / Hydra grammar: bare `None` is a string token | Use the YAML null literal: `<key>=null`. To drop the key entirely, use the delete prefix: `~<key>`. Same applies to any Hydra override you customize on the CLI or inside an entry script's `hydra_overrides=[…]` |
 | `convert_release_config_to_training.py` fails on HF download | Gated model — license not accepted, or `HF_TOKEN` unset / wrong | Accept license on HF web UI for the chosen Alpamayo version; `hf auth login`; confirm with `huggingface-cli whoami` |
 | `download_pai.py` errors with HF rate limit | Hub throttling | Re-run with backoff, or set `HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1` once the data is cached locally |
 | Joint reward run errors `Lingo-Judge not found` (`local_files_only=True`) | Grader not cached | `hf download wayveai/Lingo-Judge --local-dir "$LINGO_JUDGE_DIR"`; set `reasoning_grading_model_path` in the TOML |
