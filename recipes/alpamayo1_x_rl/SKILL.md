@@ -288,7 +288,7 @@ export WANDB_API_KEY="<your_wandb_api_key>"   # only if $USE_WANDB = yes
 | `HF_HUB_OFFLINE` | optional | `1` to skip Hub calls (air-gapped clusters / rate-limit fallbacks) |
 | `TRANSFORMERS_OFFLINE` | optional | `1` alongside `HF_HUB_OFFLINE` |
 | `WANDB_API_KEY` | conditional | Only if `$USE_WANDB = yes` |
-| `ALPAMAYO_PAI_REASONING_LOCAL_DIR` | conditional | Only if `$REWARD_MODE = joint` |
+| `ALPAMAYO_PAI_REASONING_LOCAL_DIR` | conditional | **Required when `$REWARD_MODE = joint`** — read by the reasoning entry script (`…_reasoning_entry.py`) **instead of** `ALPAMAYO_PAI_LOCAL_DIR`. The two are mutually exclusive: motion entry reads `ALPAMAYO_PAI_LOCAL_DIR`, joint entry reads `ALPAMAYO_PAI_REASONING_LOCAL_DIR`. Missing it → `RuntimeError: Missing required env var ALPAMAYO_PAI_REASONING_LOCAL_DIR` |
 | `LINGO_JUDGE_DIR` | conditional | Only if `$REWARD_MODE = joint` |
 
 ### HuggingFace auth
@@ -390,6 +390,13 @@ After success, `$ALPAMAYO_PAI_REASONING_LOCAL_DIR` should contain:
 - `camera/<subpart>/<subpart>.chunk_XXXX.zip`,
   `labels/<subpart>/<subpart>.chunk_XXXX.zip`,
   `calibration/<subpart>/...` — only the chunks containing the sampled clips.
+
+> **Disk budget heads-up.** `--only-reasoning-chunks` pulls **every chunk
+> that contains a sampled reasoning clip** — not just the clips' own
+> footage. For `--num-reasoning-clips 16` this typically lands around
+> **~85–90 GB** (vs ~5–10 GB for the motion-only path on a single chunk).
+> Make sure `$ALPAMAYO_PAI_REASONING_LOCAL_DIR`'s mount has the headroom
+> before starting the download.
 
 Verify:
 ```bash
@@ -708,7 +715,8 @@ CLI flags override `n_init_replicas` for both replica types.
 | `[policy].model_name_or_path` | `$ALPAMAYO_MODEL_DIR` |
 | `[policy].model_max_length` | Token cap for prompt + completion |
 | `[policy].model_gradient_checkpointing` | `true` for memory savings |
-| `[policy.parallelism].dp_shard_size` | FSDP shard degree (`4` local / `8` cluster) |
+| `[policy.parallelism].dp_shard_size` | FSDP shard degree for the **policy** (`4` local / `8` cluster). Distinct from `[rollout.parallelism].dp_shard_size`, which stays `1` for local — the policy + rollout values are summed when the launcher places replicas on GPUs |
+| `[rollout.parallelism].dp_shard_size` | GPUs per rollout replica (default `1`). Increase only if a single rollout replica needs to shard the vLLM engine across multiple GPUs |
 | `[policy.parallelism].n_init_replicas` | Number of policy replicas (overridden by `--policy`) |
 | `[rollout].n_generation` | Completions per prompt (the GRPO group size). Lower if rollout too slow / OOM |
 | `[rollout].batch_size` | Prompts per rollout batch |
@@ -735,6 +743,7 @@ climb on the same single clip — that's the wiring check before scaling.
 | Symptom | Root cause | Fix |
 |---------|------------|-----|
 | Hydra CLI override `<key>=None` is silently parsed as the **string** `"None"` (not Python `None`) — common symptom: a path-typed config field gets `"/<dir>/None"` joined onto it and the dataset complains the file doesn't exist | YAML / Hydra grammar: bare `None` is a string token | Use the YAML null literal: `<key>=null`. To drop the key entirely, use the delete prefix: `~<key>`. Same applies to any Hydra override you customize on the CLI or inside an entry script's `hydra_overrides=[…]` |
+| `cosmos-rl` dies during launch with `RuntimeError: Replica with GPUs larger than 8 occurs but not on Lepton job, please specify --node-ip-list ...` | **Misleading message — actual cause is insufficient GPUs on the host.** The launcher hits this when `nvidia-smi -L \| wc -l` is less than `(policy.n_init_replicas × policy.dp_shard_size) + (rollout.n_init_replicas × rollout.dp_shard_size)`. For the shipped local-test TOML that's `1×4 + 1×1 = 5`. Don't chase `--node-ip-list`; that path is for genuine multi-node setups | `nvidia-smi -L \| wc -l` to confirm the count, then either run on a host with enough GPUs or temporarily lower `policy.dp_shard_size` (note: dropping below 4 may not produce a working model — this is purely for smoke-testing the wiring, not training) |
 | `convert_release_config_to_training.py` fails on HF download | Gated model — license not accepted, or `HF_TOKEN` unset / wrong | Accept license on HF web UI for the chosen Alpamayo version; `hf auth login`; confirm with `huggingface-cli whoami` |
 | `download_pai.py` errors with HF rate limit | Hub throttling | Re-run with backoff, or set `HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1` once the data is cached locally |
 | Joint reward run errors `Lingo-Judge not found` (`local_files_only=True`) | Grader not cached | `hf download wayveai/Lingo-Judge --local-dir "$LINGO_JUDGE_DIR"`; set `reasoning_grading_model_path` in the TOML |
