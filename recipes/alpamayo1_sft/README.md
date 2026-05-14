@@ -99,7 +99,7 @@ All commands below should be run from **`alpamayo-recipes/recipes/alpamayo1_sft/
 Set `checkpoint_path` in [configs/models/ar1_base.yaml](configs/models/ar1_base.yaml), or pass
 `model.checkpoint_path=<path>` on the command line when launching Stage 1 (see below).
 
-## Run Stage 1 fine-tuning
+## Run Stage 1 Fine-tuning
 
 > Alpamayo-1 uses Hydra, so you can extend or override configuration in a structured way.
 
@@ -112,19 +112,11 @@ Set `checkpoint_path` in [configs/models/ar1_base.yaml](configs/models/ar1_base.
 After downloading PAI, set `local_dir` in [configs/sft_base.yaml](configs/sft_base.yaml) to the dataset root and
 `chunk_ids` to a range string such as `"0-10"` in your Hydra config or on the command line.
 
-### Training stages
-
-Training uses a two-stage pipeline for convergence and stability.
-
-1. **Stage 1:** Fine-tune the VLM (`base_model`) to emit discrete trajectory tokens.
-2. **Stage 2:** Freeze the Stage-1 VLM and train the action expert (trajectory diffusion) for
-   continuous trajectories.
-
 ### Hyperparameters
 
 Adjust settings such as `dataloader_num_workers` or the learning rate in the config as needed.
 
-#### Stage 1
+### Stage 1 (CoC reasoining disabled)
 
 > Stage 1 fine-tunes the full VLM; DeepSpeed ZeRO-2 is enabled by default in the bundled config
 > for memory-efficient multi-GPU training.
@@ -154,9 +146,11 @@ Example log lines:
 ```
 
 
-##### Enable CoC reasoning for stage 1
+### Stage 1 (CoC reasoining enabled)
 
-Note that in the sample scenario provided, CoC labels are not used. To enable CoC, update the [default.yaml](./configs/vla_processor/default.yaml) as follows:
+Note that in the sample scenario provided above, CoC labels are not used. Enabling CoC requires **two** pieces to be in sync — miss any one and the run aborts with either `AssertionError: cot not found in data but 'cot' in components_order` or `ValueError: Event timestamp 5100000 not found for <clip_id> in reasoning_db`.
+
+**1. Processor config** — update [configs/vla_processor/default.yaml](./configs/vla_processor/default.yaml):
 
 ```yaml
 components_order: ["image", "traj_history", "prompt", "cot", "traj_future"]
@@ -164,7 +158,29 @@ components_prompt: ["cot", "traj_future"]
 label_components: ["cot", "traj_future"]
 ```
 
-#### Stage 2
+**2. Dataset config** — Verify with `ls /path/to/pai_dataset/reasoning/ood_reasoning.parquet /path/to/pai_dataset/clip_index_reasoning_mini.parquet` (both files must exist), then (a) point train/val datasets at the reasoning parquet, (b) point them at the filtered clip index, and (c) disable the global single-keyframe shortcut so each sample's `t0_us` is drawn from the per-clip reasoning event timestamps. Either edit [configs/sft_base.yaml](./configs/sft_base.yaml) (add `reasoning_metadata` and `clip_index_metadata`, set `use_default_keyframe: false` under both `train_dataset` and `val_dataset`), or **append/override** them on the launch command. Note the `+` prefix on the new keys (Hydra struct mode rejects non-existent keys otherwise — error: `Key 'reasoning_metadata' is not in struct`); `use_default_keyframe` already exists in the YAML so it takes no `+`. Make sure you also adjust `chunk_ids` to your downloaded range in [configs/sft_base.yaml](./configs/sft_base.yaml). Then run:
+
+```bash
+torchrun --nproc_per_node 8 \
+  -m alpamayo1_sft.train_hf \
+  --config-path pkg://alpamayo1_sft/configs \
+  --config-name sft_stage1 \
+  model.checkpoint_path=<path/to/Alpamayo-R1-10B> \
+  data.train_dataset.local_dir=<path/to/pai_dataset> \
+  data.val_dataset.local_dir=<path/to/pai_dataset> \
+  +data.train_dataset.reasoning_metadata=reasoning/ood_reasoning.parquet \
+  +data.val_dataset.reasoning_metadata=reasoning/ood_reasoning.parquet \
+  +data.train_dataset.clip_index_metadata=clip_index_reasoning_mini.parquet \
+  +data.val_dataset.clip_index_metadata=clip_index_reasoning_mini.parquet \
+  data.train_dataset.use_default_keyframe=false \
+  data.val_dataset.use_default_keyframe=false
+```
+
+> The reasoning / clip-index paths are **relative to `data.*.local_dir`** — the dataset joins them onto `local_dir` internally. Pass `reasoning/ood_reasoning.parquet`, not the absolute path.
+
+Note: `reasoning_metadata` lets the dataset attach a `cot` field; `clip_index_metadata` ensures only reasoning-bearing clips are enumerated (otherwise non-reasoning clips reach the chat template without `cot`); `use_default_keyframe=false` makes `t0_us` come from each clip's real reasoning-event timestamp instead of the global `DEFAULT_T0_US = 5_100_000` (otherwise `get_reasoning_data` raises the `5100000 not found` ValueError above).
+
+## Run Stage 2 Fine-tuning 
 
 Stage 2 adds the trajectory diffusion expert and keeps the Stage-1 VLM frozen.
 
@@ -188,7 +204,7 @@ Loss curve:
 
 ![loss.png](loss.png)
 
-### Evaluation
+## Evaluation
 
 Evaluate the Stage-2 checkpoint against `val_dataset`:
 

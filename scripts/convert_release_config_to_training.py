@@ -111,7 +111,7 @@ def convert_config(
         changes.append(f"architectures: {old_arch} -> ['ReasoningVLA']")
 
     # --- 3. Remap all _target_ paths ---
-    old_targets = _collect_targets(config)
+    old_targets = collect_targets(config)
     remap_targets(out, TARGET_REMAP)
     new_targets = collect_targets(out)
     for path, old_val in old_targets.items():

@@ -55,7 +55,7 @@ except Exception as e:
 # ---------------------------------------------------------------------------
 from alpamayo1_x_rl.models._spec import ModelSpec
 from alpamayo1_x_rl.models.reasoning_vla.cosmos_wrapper import ReasoningVLACosmos
-from alpamayo1_x_rl.models.reasoning_vla.data_packer import ReasoningVLADataPacker
+from alpamayo1_x_rl.models.reasoning_vla.data_packer import RVLADataPacker
 from alpamayo1_x_rl.models.reasoning_vla.rollout import ReasoningVLAVllmRollout  # noqa: F401 (Cosmos registry)
 from alpamayo1_x_rl.models.reasoning_vla.trainer import ReasoningVLAGRPOTrainer  # noqa: F401 (Cosmos registry)
 from alpamayo1_x_rl.models.reasoning_vla.weight_mapper import ReasoningVLAWeightMapper
@@ -63,8 +63,8 @@ from alpamayo1_x_rl.models.reasoning_vla.weight_mapper import ReasoningVLAWeight
 
 def _reasoning_vla_reward_fn(to_be_evaluated, reference=None, *args, config=None, **kwargs):
     """Compute aggregated reward for a single ReasoningVLA rollout."""
-    import rl.state as alp_state
-    from rl.rewards.aggregated_reward import compute_reward
+    import alpamayo1_x_rl.state as alp_state
+    from alpamayo1_x_rl.rewards.aggregated_reward import compute_reward
 
     assert isinstance(reference, dict) and reference, (
         f"Expected a non-empty dict for reference, got {type(reference).__name__}: {reference!r}"
@@ -82,7 +82,7 @@ def _reasoning_vla_reward_fn(to_be_evaluated, reference=None, *args, config=None
 REASONING_VLA_SPEC = ModelSpec(
     cosmos_wrapper=ReasoningVLACosmos,
     weight_mapper=ReasoningVLAWeightMapper,
-    data_packer_cls=ReasoningVLADataPacker,
+    data_packer_cls=RVLADataPacker,
     reward_fn=_reasoning_vla_reward_fn,
     hydra_config_path="hydra_configs",
     hydra_config_name="alpamayo1_5_rvla_rl_pai",
@@ -91,7 +91,7 @@ REASONING_VLA_SPEC = ModelSpec(
         "data.train.dataset.clip_index_metadata=clip_index_mini.parquet",
         "data.train.dataset.features_metadata=features.csv",
         "data.train.dataset.use_default_keyframe=True",
-        "data.train.dataset.reasoning_metadata=None",
+        "data.train.dataset.reasoning_metadata=null",
     ],
 )
 
