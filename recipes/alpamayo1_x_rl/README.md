@@ -231,7 +231,7 @@ hf download wayveai/Lingo-Judge \
     --local-dir /path/to/lingo_judge_model
 ```
 
-Then set the TOML config to point to the cached directory. Key fields under `[custom.alpamayo]`:
+Then set the [TOML config](./toml/alpamayo_rvla_rl_local_test_with_reasoning.toml) to point to the cached directory. Key fields under `[custom.alpamayo]`:
 
 | Field                          | Purpose                                                  |
 | ------------------------------ | -------------------------------------------------------- |
