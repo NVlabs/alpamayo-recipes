@@ -179,13 +179,23 @@ The Stage-1 checkpoint should be a Trainer output directory containing `model.sa
 
 ## Train with LingoQA
 
-> Before starting, replace `data_root` with the correct LingoQA directory in [sft_stage1_lingoqa](./configs/sft_stage1_lingoqa.yaml).
+> Before starting, set `data_root` to the LingoQA directory (either edit [configs/sft_stage1_lingoqa.yaml](./configs/sft_stage1_lingoqa.yaml) or override on the CLI as shown below).
+
+The Wayve Scenery split bundles only `train.parquet`; its `val.parquet` lives in the separate **Evaluation** Drive folder. For a quick smoke run, reuse `train.parquet` for the val side by overriding `data.val_dataset.parquet_name=train.parquet`. (For a real eval, download the Evaluation split into its own dir and point `data.val_dataset.data_root` at it with `parquet_name=val.parquet`.)
 
 ```bash
+cd $YOUR_HOME/alpamayo-recipes/recipes/alpamayo1_5_sft
 torchrun --nproc_per_node 8 -m alpamayo1_5_sft.train_hf \
   --config-path pkg://alpamayo1_5_sft/configs \
-  --config-name sft_stage1_lingoqa
+  --config-name sft_stage1_lingoqa \
+  model.checkpoint_path=/path/to/Alpamayo-1.5-10B-A1-format \
+  data.train_dataset.data_root=/path/to/LingoQA \
+  data.val_dataset.data_root=/path/to/LingoQA \
+  data.val_dataset.parquet_name=train.parquet \
+  trainer.deepspeed=$YOUR_HOME/alpamayo-recipes/recipes/alpamayo1_5_sft/configs/deepspeed/zero2.json
 ```
+
+> `trainer.deepspeed` is passed as an absolute path because Hydra may change the working directory at runtime, and the shipped relative `configs/deepspeed/zero2.json` may not resolve from there. Same applies to the nav and Stage-2 launches if you hit `ValueError: Expected a string path to an existing deepspeed config`.
 
 Because LingoQA was included in training for the released Alpamayo 1.5 model, the loss should remain low and stable.
 ![loss](./loss_A1-5_lingoqa.png)
