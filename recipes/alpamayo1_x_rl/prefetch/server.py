@@ -162,7 +162,7 @@ def set_custom_cfg(config: Any) -> None:
     # This keeps the "wrap in init_once" behavior while also handling the common ordering
     # where Cosmos calls Dataset.setup() (and thus sets TOML) after state.init_once().
     try:
-        from rl import (
+        from alpamayo1_x_rl import (
             state as alp_state,  # local import to avoid cycles at import time
         )
     except ImportError:
