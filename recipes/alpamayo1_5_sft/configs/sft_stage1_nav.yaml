@@ -9,8 +9,10 @@ data:
   train_dataset:
     _target_: alpamayo.data.pai_nav.PAIDatasetWithNav
     _recursive_: false
-    local_dir: /home/yesfandiari/sample_data_1_5/
-    annotations_path: /home/yesfandiari/sample_data_1_5/
+    local_dir: ???
+    annotations_path: ???
+    chunk_ids: [214, 224, 276, 317, 420, 727, 728, 968, 982,
+                1519, 1657, 1984, 2277, 2368, 2372, 2447, 2599, 2634, 2868]
     vla_preprocess_args:
       generation_mode: false
   val_dataset:
@@ -18,6 +20,8 @@ data:
     _recursive_: false
     local_dir: ???
     annotations_path: ???
+    chunk_ids: [214, 224, 276, 317, 420, 727, 728, 968, 982,
+              1519, 1657, 1984, 2277, 2368, 2372, 2447, 2599, 2634, 2868]
     vla_preprocess_args:
       generation_mode: true
 

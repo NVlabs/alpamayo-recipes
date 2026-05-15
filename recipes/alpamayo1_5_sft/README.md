@@ -76,7 +76,7 @@ python scripts/download_pai.py \
   --output-dir /path/to/pai_dataset
 ```
 
-Navigation annotations are bundled [here](https://github.com/NVlabs/alpamayo1.5/blob/main/notebooks/nav_demo_samples.json). Each entry has `clip_id`, `t0_relative`, `nav_text`, and optionally `cot`. We will try overfitting on these 20 samples.
+Navigation annotations are bundled [here](https://github.com/NVlabs/alpamayo1.5/blob/main/notebooks/nav_demo_samples.json). Each entry has `clip_id`, `t0_relative`, `nav_text`, and optionally `cot`. We'll use these 20 samples as an overfit smoke test for Stage-1 SFT.
 
 ### LingoQA dataset (for VQA)
 
@@ -144,9 +144,13 @@ defaults:
   - override /vla_processor@data.train_dataset.vla_preprocess_args: vqa
 ```
 
+## Hyperparameters
+
+Adjust settings such as `dataloader_num_workers` or the learning rate in the config as needed.
+
 ## Train with Navigation (overfitting on 20 PAI samples)
 
-> Before starting, replace `local_dir` with the correct PAI directory and `annotations_path` with the JSON file from A1.5 in [configs/sft_stage1_nav.yaml](./configs/sft_stage1_nav.yaml).
+> Before starting, replace `local_dir` with the correct PAI directory and `annotations_path` with the JSON file from [Alpamayo1.5](https://github.com/NVlabs/alpamayo1.5/blob/main/notebooks/nav_demo_samples.json) in [configs/sft_stage1_nav.yaml](./configs/sft_stage1_nav.yaml).
 
 ```bash
 cd $YOUR_HOME/alpamayo-recipes/recipes/alpamayo1_5_sft/
