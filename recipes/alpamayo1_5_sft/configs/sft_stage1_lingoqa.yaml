@@ -9,7 +9,7 @@ data:
   train_dataset:
     _target_: alpamayo.data.lingoqa.LingoQADataset
     _recursive_: false
-    data_root: /home/yesfandiari/lingo
+    data_root: ???
     parquet_name: train.parquet
     local_dir: null
     chunk_ids: null
@@ -19,7 +19,7 @@ data:
   val_dataset:
     _target_: alpamayo.data.lingoqa.LingoQADataset
     _recursive_: false
-    data_root: /home/yesfandiari/lingo
+    data_root: ???
     parquet_name: val.parquet
     local_dir: null
     chunk_ids: null

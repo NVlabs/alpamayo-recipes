@@ -101,7 +101,7 @@ LingoQA/
 └── images/train/      # front-camera JPEGs (5 frames per segment)
 ```
 
-Set `data_root: /path/to/LingoQA/` in [sft_stage1](./configs/sft_stage1_lingoqa.yaml) config when post-training using LingoQA.
+Set `data_root: /path/to/LingoQA/` in [sft_stage1_lingoqa](./configs/sft_stage1_lingoqa.yaml) config when post-training using LingoQA.
 
 ## Prepare Checkpoint
 
