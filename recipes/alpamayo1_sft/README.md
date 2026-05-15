@@ -54,12 +54,12 @@ Set your Hugging Face token first:
 export HF_TOKEN=<your Hugging Face token>
 ```
 
-Download a representative slice for Alpamayo-1 (chunks 0–10, four cameras, egomotion) running from `alpamayo-recipes`:
+Download a representative slice for Alpamayo-1 (chunks 0–100, four cameras, egomotion) running from `alpamayo-recipes`:
 
 ```bash
 cd $YOUR_HOME/alpamayo-recipes
 python scripts/download_pai.py \
-  --chunk-ids 0-10 \
+  --chunk-ids 0-100 \
   --camera camera_front_wide_120fov camera_cross_left_120fov camera_cross_right_120fov camera_front_tele_30fov \
   --calibration camera_intrinsics sensor_extrinsics \
   --labels egomotion \

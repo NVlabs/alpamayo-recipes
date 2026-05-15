@@ -162,7 +162,7 @@ def set_custom_cfg(config: Any) -> None:
     # This keeps the "wrap in init_once" behavior while also handling the common ordering
     # where Cosmos calls Dataset.setup() (and thus sets TOML) after state.init_once().
     try:
-        from rl import (
+        from alpamayo1_x_rl import (
             state as alp_state,  # local import to avoid cycles at import time
         )
     except ImportError:
@@ -282,9 +282,9 @@ def _materialize_local_for_role(*, dataset: Any, mapped_idx: int, role: str) -> 
     raw = dataset.__getitem__(int(mapped_idx))
     if role == "raw":
         return raw
-    from rl.models.reasoning_vla.data_packer import ReasoningVLADataPacker
+    from alpamayo1_x_rl.models.reasoning_vla.data_packer import RVLADataPacker
 
-    packer = ReasoningVLADataPacker()
+    packer = RVLADataPacker()
     if role == "policy":
         pol = _copy_for_role(raw)
         if not isinstance(pol, dict):
@@ -368,7 +368,7 @@ class _WorkerResult:
 
 def _server_main(*, dataset: Any, socket_path: str, server_key: str) -> None:
     """Run the node-level prefetch server loop (one per node per split)."""
-    from alpamayo1_x_rl.models.reasoning_vla.data_packer import ReasoningVLADataPacker
+    from alpamayo1_x_rl.models.reasoning_vla.data_packer import RVLADataPacker
 
     ds_len = len(dataset)
     if ds_len <= 0:
@@ -382,7 +382,7 @@ def _server_main(*, dataset: Any, socket_path: str, server_key: str) -> None:
     _prefetch_log("info", "server_starting", socket=socket_path, server_key=str(server_key))
 
     log_request_details = bool(_alpamayo_cfg_get("prefetch.log_request_details", True))
-    packer = ReasoningVLADataPacker()
+    packer = RVLADataPacker()
 
     cache: OrderedDict[int, _Entry] = OrderedDict()
     # Background prefetch workers: keep "next-per-mod" warm without blocking hit-serving.
@@ -1213,7 +1213,7 @@ _NODE_CLIENTS: dict[str, _NodeClient] = {}
 # dataset object id -> server_key (typically split: "train"/"val")
 _DATASET_SERVER_KEY: dict[int, str] = {}
 
-# shm read/zero-copy unpack helpers live in `rl.utils.prefetch_shm`.
+# shm read/zero-copy unpack helpers live in `alpamayo1_x_rl.prefetch.shm`.
 # Client-side shm handle registry for true 0-copy views.
 #
 # Requirements:
@@ -1227,7 +1227,7 @@ _DATASET_SERVER_KEY: dict[int, str] = {}
 #   the refcount; when it hits 0 we close the shm handle.
 #
 # NOTE: the client shm handle registry + unpacking is implemented in
-# `rl.utils.prefetch_shm` and imported at the top of this file.
+# `alpamayo1_x_rl.prefetch.shm` and imported at the top of this file.
 
 
 def _get_client(*, dataset: Any, server_key: str) -> _NodeClient:

@@ -17,7 +17,7 @@
 
 Inherits from cosmos_rl DataPacker and adds RL-specific sample fetching
 with prefetch support.  Reuses the tokenizer/processor already initialized
-by rl.state.init_once() (called in launcher before setup).
+by alpamayo1_x_rl.state.init_once() (called in launcher before setup).
 """
 
 from __future__ import annotations
@@ -36,7 +36,7 @@ SampleRole = Literal["rollout", "policy"]
 class BaseRLDataPacker(DataPacker):
     """Shared base for ReasoningVLA and ExpertModel RL data packers.
 
-    Reuses the tokenizer already built by rl.state.init_once() (which runs
+    Reuses the tokenizer already built by alpamayo1_x_rl.state.init_once() (which runs
     before cosmos-rl calls setup()).  Subclasses implement the model-specific
     RL API (get_rollout_input, get_policy_input, policy_collate_fn, etc.).
     """

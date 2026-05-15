@@ -134,7 +134,7 @@ class RVLADataPacker(BaseRLDataPacker):
 
         Args:
             item: Lightweight index dict ``{"idx": str, "split": str}`` produced by
-                :class:`~rl.base_dataset.AlpamayoCosmosDataset` and carried as
+                :class:`~alpamayo1_x_rl.base_dataset.AlpamayoCosmosDataset` and carried as
                 ``RLPayload.prompt`` through the cosmos-rl pipeline.  The actual
                 sample data is fetched on-demand via :meth:`_get_sample`.
         """
