@@ -1,0 +1,15 @@
+[project]
+name = "alpamayo-recipes"
+version = "0.1.0"
+requires-python = "==3.12.*"
+dependencies = []
+
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+# Recipe-side utilities shared by the per-version recipes under recipes/:
+# chat templates, data loaders, metrics, common helpers, visualization, etc.
+# Version-agnostic; per-version dispatch lives in alpamayo.chat_template.
+[tool.hatch.build.targets.wheel]
+packages = ["alpamayo"]
