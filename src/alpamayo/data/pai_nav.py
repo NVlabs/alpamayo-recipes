@@ -29,10 +29,13 @@ Example JSON (``nav_demo_samples.json``)::
 """
 
 import json
+import logging
 from typing import Any
 
 from alpamayo.data.pai import PAIDataset
 from alpamayo_r1.load_physical_aiavdataset import load_physical_aiavdataset
+
+logger = logging.getLogger(__name__)
 
 
 class PAIDatasetWithNav(PAIDataset):
@@ -55,7 +58,37 @@ class PAIDatasetWithNav(PAIDataset):
         super().__init__(**kwargs)
 
         with open(annotations_path) as f:
-            self._samples: list[dict[str, Any]] = json.load(f)
+            samples: list[dict[str, Any]] = json.load(f)
+
+        # Honour `chunk_ids` the same way plain PAIDataset does: only iterate
+        # samples whose clip lives in one of the configured chunks. Without
+        # this filter, nav training would silently iterate samples whose
+        # chunk files aren't on disk and crash mid-batch with FileNotFoundError.
+        if self.avdi.chunk_ids is not None:
+            allowed_clip_ids = set(self.avdi.get_all_clip_ids())
+            kept = [s for s in samples if s["clip_id"] in allowed_clip_ids]
+            dropped = len(samples) - len(kept)
+            if not kept:
+                sample_clip_ids = sorted({s["clip_id"] for s in samples})
+                raise ValueError(
+                    f"[PAIDatasetWithNav] All {len(samples)} annotated samples in "
+                    f"{annotations_path} were filtered out by chunk_ids="
+                    f"{self.avdi.chunk_ids}. None of the annotation clip_ids "
+                    f"({sample_clip_ids[:3]}{'...' if len(sample_clip_ids) > 3 else ''}) "
+                    f"are in those chunks. Either widen chunk_ids to cover the "
+                    f"annotated clips' chunks, or use an annotations file whose "
+                    f"clips live in the configured chunks."
+                )
+            if dropped:
+                logger.warning(
+                    "[PAIDatasetWithNav] Filtered out %d/%d annotated samples whose "
+                    "clip chunks aren't in chunk_ids=%s; keeping %d.",
+                    dropped, len(samples), self.avdi.chunk_ids, len(kept),
+                )
+            self._samples = kept
+        else:
+            self._samples = samples
+
         self.clip_ids = [s["clip_id"] for s in self._samples]
 
     def __len__(self) -> int:
