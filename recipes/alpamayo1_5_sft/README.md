@@ -214,6 +214,4 @@ torchrun --nproc_per_node 8 \
   data.val_dataset.local_dir=<path/to/pai_dataset>
 ```
 
-`evaluate_hf.py` auto-detects the model class (`TrainableReasoningVLA` vs `TrainableAlpamayoR1`) and routes `evaluate.eval_ckpt` into the corresponding field (`model.checkpoint_path` for Stage 1, `model.pretrained_model_name_or_path` for Stage 2). Reported metrics include `val/metric/ade`, `val/metric/min_ade`, `val/metric/corner_distance`, and per-horizon breakdowns (`by_t=0.5`, `1.0`, `3.0`, `5.0`).
-
 > Eval is intended for trajectory checkpoints (Stage 2 produced from a navigation Stage-1 run). VQA Stage-1 outputs do not have a trajectory target and aren't covered by the distance metrics above.
