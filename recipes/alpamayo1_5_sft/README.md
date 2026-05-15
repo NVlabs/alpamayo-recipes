@@ -179,7 +179,7 @@ The Stage-1 checkpoint should be a Trainer output directory containing `model.sa
 
 ## Train with LingoQA
 
-> Before starting, replace `data_root` with the correct LingoQA directory.
+> Before starting, replace `data_root` with the correct LingoQA directory in [sft_stage1_lingoqa](./configs/sft_stage1_lingoqa.yaml).
 
 ```bash
 torchrun --nproc_per_node 8 -m alpamayo1_5_sft.train_hf \
