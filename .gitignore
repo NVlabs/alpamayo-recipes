@@ -2,3 +2,4 @@ __pycache__/
 outputs/*
 *.egg-info
 output_stage*
+*.egg-info
