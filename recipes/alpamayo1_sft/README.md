@@ -54,7 +54,7 @@ Set your Hugging Face token first:
 export HF_TOKEN=<your Hugging Face token>
 ```
 
-Download a representative slice for Alpamayo-1 (chunks 0–10, four cameras, egomotion) running from `alpamayo-recipes`:
+Download a representative slice for Alpamayo-1 (chunks 0–100, four cameras, egomotion) running from `alpamayo-recipes`:
 
 ```bash
 cd $YOUR_HOME/alpamayo-recipes
