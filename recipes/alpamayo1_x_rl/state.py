@@ -102,7 +102,7 @@ def init_once(
     if _STATE.initialized_ckpt_path is not None and not force:
         if _STATE.initialized_ckpt_path != ckpt_path:
             raise RuntimeError(
-                "rl.state is already initialized with a different ckpt_path. "
+                "alpamayo1_x_rl.state is already initialized with a different ckpt_path. "
                 f"existing={_STATE.initialized_ckpt_path!r}, requested={ckpt_path!r}"
             )
         return True
@@ -162,7 +162,7 @@ def init_once(
 def _require(name: str, value: Any):
     if value is None:
         raise RuntimeError(
-            f"[rl.state] '{name}' is not initialized. Call state.init_once(...) first."
+            f"[alpamayo1_x_rl.state] '{name}' is not initialized. Call state.init_once(...) first."
         )
     return value
 

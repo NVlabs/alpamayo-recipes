@@ -76,7 +76,7 @@ def _import_server():
 
         return server
     except ImportError:
-        pytest.skip("rl.prefetch.server not importable from cwd")
+        pytest.skip("alpamayo1_x_rl.prefetch.server not importable from cwd")
 
 
 def _import_shm():
@@ -85,7 +85,7 @@ def _import_shm():
 
         return shm
     except ImportError:
-        pytest.skip("rl.prefetch.shm not importable from cwd")
+        pytest.skip("alpamayo1_x_rl.prefetch.shm not importable from cwd")
 
 
 # ---------------------------------------------------------------------------
@@ -119,7 +119,7 @@ def _cleanup(srv):
 
 
 _PACKER_PATCH = {
-    "rl.models.reasoning_vla.data_packer": mock.MagicMock(RVLADataPacker=_FakePacker)
+    "alpamayo1_x_rl.models.reasoning_vla.data_packer": mock.MagicMock(RVLADataPacker=_FakePacker)
 }
 
 

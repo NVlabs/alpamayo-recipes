@@ -55,17 +55,17 @@ def compute_reward(
 ) -> tuple[float, dict[str, float]]:
     """Aggregate traj, comfort, and CoT reasoning into one scalar reward.
 
-    Trajectory and comfort match :func:`rl.rewards.aggregated_reward.compute_reward`.
+    Trajectory and comfort match :func:`alpamayo1_x_rl.rewards.aggregated_reward.compute_reward`.
     Additionally parses CoT from ``to_be_evaluated``, grades it against ground-truth
     CoT when both are present, and adds the weighted reasoning component (or a
     penalty when CoT is missing after decode).
     """
     from alpamayo_r1.models.token_utils import extract_between_special_tokens
-    from rl.rewards.comfort_reward import compute_comfort
+    from alpamayo1_x_rl.rewards.comfort_reward import compute_comfort
     from cosmos_rl.utils.logging import logger  # pyright: ignore[reportMissingImports]
 
-    from rl.rewards.traj_reward import calculate_ade
-    from rl.utils.trajectory_decode import decode_rollout_trajectory
+    from alpamayo1_x_rl.rewards.traj_reward import calculate_ade
+    from alpamayo1_x_rl.utils.trajectory_decode import decode_rollout_trajectory
 
     w = _get_reward_cfg(config)
 
@@ -94,7 +94,7 @@ def compute_reward(
     logger.debug(f"[compute_reward] Pred_cot: {pred_cot}")
     logger.debug(f"[compute_reward] GT_cot: {gt_cot}")
 
-    from rl.utils.light_weight_reasoning_grading_model import (
+    from alpamayo1_x_rl.utils.light_weight_reasoning_grading_model import (
         get_reasoning_grader_from_config,
     )
 
