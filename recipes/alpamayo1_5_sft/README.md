@@ -192,10 +192,7 @@ torchrun --nproc_per_node 8 -m alpamayo1_5_sft.train_hf \
   --config-path pkg://alpamayo1_5_sft/configs \
   --config-name sft_stage1_lingoqa \
   model.checkpoint_path=/path/to/Alpamayo-1.5-10B-A1-format \
-  data.train_dataset.data_root=/path/to/LingoQA \
-  data.val_dataset.data_root=/path/to/LingoQA \
-  data.val_dataset.parquet_name=train.parquet \
-  trainer.deepspeed=$YOUR_HOME/alpamayo-recipes/recipes/alpamayo1_5_sft/configs/deepspeed/zero2.json
+  data.val_dataset.parquet_name=train.parquet
 ```
 
 > `trainer.deepspeed` is passed as an absolute path because Hydra may change the working directory at runtime, and the shipped relative `configs/deepspeed/zero2.json` may not resolve from there. Same applies to the nav and Stage-2 launches if you hit `ValueError: Expected a string path to an existing deepspeed config`.

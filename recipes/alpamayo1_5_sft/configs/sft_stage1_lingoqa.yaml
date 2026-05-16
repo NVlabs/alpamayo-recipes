@@ -36,4 +36,4 @@ paths:
   output_dir: output_stage1_lingoqa
 evaluate:
   eval_ckpt: null
-task_name: alpamayo_r1_sft_stage1_lingoqa
+task_name: alpamayo_r1_5_sft_stage1_lingoqa

@@ -15,7 +15,7 @@ Each recipe folder contains its own README with installation and training instru
 | Recipe | Description |
 |--------|-------------|
 | [`recipes/alpamayo1_sft/`](recipes/alpamayo1_sft/README.md) | Alpamayo-1 supervised fine-tuning (HuggingFace Trainer + DeepSpeed) |
-| [`recipes/alpamayo1_5_sft/`](recipes/alpamayo1_5_sft/README.md) | Alpamayo-1.5 SFT *(coming soon)* |
+| [`recipes/alpamayo1_5_sft/`](recipes/alpamayo1_5_sft/README.md) | Alpamayo-1.5 SFT (HuggingFace Trainer + DeepSpeed) |
 | [`recipes/alpamayo1_x_rl/`](recipes/alpamayo1_x_rl/README.md) | Alpamayo-1.x RL post-training (Cosmos-RL / GRPO) |
 | [`recipes/distillation/`](recipes/distillation/README.md) | Distillation *(coming soon)* |
 | [`recipes/alpagym/`](recipes/alpagym/README.md) | AlpaGym *(coming soon)* |

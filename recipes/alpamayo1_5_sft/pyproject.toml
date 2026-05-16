@@ -1,5 +1,5 @@
 [project]
-name = "alpamayo1-sft"
+name = "alpamayo1-5-sft"
 version = "0.1.0"
 requires-python = "==3.12.*"
 dependencies = [
@@ -29,12 +29,12 @@ dependencies = [
 requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
-# Look one level up (recipes/) so setuptools finds alpamayo1_sft/ as a proper package.
-# The editable install adds recipes/ to sys.path, making `alpamayo1_sft` importable
+# Look one level up (recipes/) so setuptools finds alpamayo1_5_sft/ as a proper package.
+# The editable install adds recipes/ to sys.path, making `alpamayo1_5_sft` importable
 # from within this directory once the venv is active.
 [tool.setuptools.packages.find]
 where = [".."]
-include = ["alpamayo1_sft*"]
+include = ["alpamayo1_5_sft*"]
 
 [dependency-groups]
 dev = [
