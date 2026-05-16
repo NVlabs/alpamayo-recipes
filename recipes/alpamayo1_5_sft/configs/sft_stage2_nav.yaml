@@ -1,0 +1,38 @@
+defaults:
+  - sft_base
+  - /models/ar1_5_expert@model
+  - override /vla_processor@data.train_dataset.vla_preprocess_args: nav
+  - override /vla_processor@data.val_dataset.vla_preprocess_args: nav
+  - _self_
+
+data:
+  train_dataset:
+    _target_: alpamayo.data.pai_nav.PAIDatasetWithNav
+    _recursive_: false
+    local_dir: ???
+    annotations_path: ???
+    chunk_ids: [214, 224, 276, 317, 420, 727, 728, 968, 982,
+                1519, 1657, 1984, 2277, 2368, 2372, 2447, 2599, 2634, 2868]
+    vla_preprocess_args:
+      generation_mode: false
+  val_dataset:
+    _target_: alpamayo.data.pai_nav.PAIDatasetWithNav
+    _recursive_: false
+    local_dir: ???
+    annotations_path: ???
+    chunk_ids: [2868]
+    vla_preprocess_args:
+      generation_mode: true
+
+paths:
+  output_dir: output_stage2_nav
+
+trainer:
+  gradient_checkpointing: false
+  deepspeed: null
+  ddp_find_unused_parameters: true
+
+evaluate:
+  eval_ckpt: null
+
+task_name: alpamayo_1_5_sft_stage2_nav

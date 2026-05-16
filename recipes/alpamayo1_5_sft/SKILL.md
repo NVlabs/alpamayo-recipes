@@ -184,7 +184,7 @@ missing files, hydra errors), or the user explicitly interrupting.
                                       ▼  (trajectory tasks only)
                   ┌──────────────────────────────────────────────┐
                   │      Stage 2 — Action expert (frozen VLM)    │
-                  │  config: sft_stage2.yaml                     │
+                  │  config: sft_stage2_nav.yaml                 │
                   │  no DeepSpeed, no grad-ckpt,                 │
                   │  ddp_find_unused_parameters=true             │
                   └──────────────────────────────────────────────┘
@@ -375,7 +375,7 @@ Stage-1 config selects one via a Hydra `defaults` `override`.
 
 | Variant   | Components                                      | Supervised on | Selected by Stage-1 config |
 |-----------|-------------------------------------------------|---------------|-----------------------------|
-| `default` | image, traj_history, prompt, traj_future        | traj_future   | *(inherited by `sft_stage2.yaml` via `sft_base.yaml`; no Stage-1 config selects it directly)* |
+| `default` | image, traj_history, prompt, traj_future        | traj_future   | *(not selected by any shipped Stage-1 or Stage-2 config — `sft_stage2_nav.yaml` overrides to the `nav` variant; this row is reference-only)* |
 | `nav`     | image, traj_history, **route**, prompt, traj_future | traj_future | `sft_stage1_nav.yaml`       |
 | `vqa`     | image, **question, answer**                     | answer        | `sft_stage1_lingoqa.yaml`   |
 
@@ -481,18 +481,19 @@ cd "$YOUR_HOME/alpamayo-recipes/recipes/alpamayo1_5_sft"
 torchrun --nproc_per_node 8 \
   -m alpamayo1_5_sft.train_hf \
   --config-path pkg://alpamayo1_5_sft/configs \
-  --config-name sft_stage2 \
+  --config-name sft_stage2_nav \
   model.pretrained_model_name_or_path="$CKPT_DIR_A1" \
   model.stage1_vlm_checkpoint_path="$STAGE1_CKPT" \
   data.train_dataset.local_dir="$PAI_DIR" \
+  data.train_dataset.annotations_path="$NAV_ANNOTATIONS" \
   data.val_dataset.local_dir="$PAI_DIR" \
-  data.train_dataset.chunk_ids="<range that overlaps your downloaded chunks>" \
-  data.val_dataset.chunk_ids="<same or another downloaded chunk>"
+  data.val_dataset.annotations_path="$NAV_ANNOTATIONS"
 ```
 
-> **`chunk_ids` is required for Stage 2 on a nav-only PAI mirror.** Stage 2
-> inherits `chunk_ids: "0-99"` from [configs/sft_base.yaml](configs/sft_base.yaml).
-> If you followed the nav data path you only have the 19 chunks the nav
+> **`chunk_ids` is already baked into `sft_stage2_nav.yaml`** as the same
+> 19-chunk nav list used in Stage 1 — no override needed. If you only have
+> a subset on disk, narrow the list in the YAML or override on the CLI to
+> match what you actually downloaded.
 > annotations reference (e.g. 214, 224, 276, …) — Stage 2 will look for
 > chunk 0 and crash with `FileNotFoundError: .../labels/egomotion/egomotion.chunk_0008.zip`.
 > Pass `data.{train,val}_dataset.chunk_ids="<X>-<X+1>"` for any chunk you
@@ -538,9 +539,10 @@ cd "$YOUR_HOME/alpamayo-recipes/recipes/alpamayo1_5_sft"
 torchrun --nproc_per_node 8 \
   -m alpamayo1_5_sft.evaluate_hf \
   --config-path pkg://alpamayo1_5_sft/configs \
-  --config-name sft_stage2 \
+  --config-name sft_stage2_nav \
   evaluate.eval_ckpt="$STAGE2_CKPT" \
-  data.val_dataset.local_dir="$PAI_DIR"
+  data.val_dataset.local_dir="$PAI_DIR" \
+  data.val_dataset.annotations_path="$NAV_ANNOTATIONS"
 ```
 
 [evaluate_hf.py](evaluate_hf.py) auto-detects the model class
@@ -696,7 +698,7 @@ one-liner.
 - Stage 1 task configs:
   [configs/sft_stage1_nav.yaml](configs/sft_stage1_nav.yaml) (nav),
   [configs/sft_stage1_lingoqa.yaml](configs/sft_stage1_lingoqa.yaml) (vqa)
-- Stage 2 config: [configs/sft_stage2.yaml](configs/sft_stage2.yaml)
+- Stage 2 config: [configs/sft_stage2_nav.yaml](configs/sft_stage2_nav.yaml)
 - Model targets:
   [configs/models/ar1_5_base.yaml](configs/models/ar1_5_base.yaml),
   [configs/models/ar1_5_expert.yaml](configs/models/ar1_5_expert.yaml)

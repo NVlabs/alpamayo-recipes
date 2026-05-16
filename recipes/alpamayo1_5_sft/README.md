@@ -163,14 +163,17 @@ These 20 samples are not used to train the released Alpamayo 1.5 model, but the 
 
 ![loss](./loss_A1-5_nav.png)
 
-## Train Stage 2 Trajectory Expert
+## Train Stage 2 Trajectory Expert (navigation-conditioned)
 
-Stage 2 adds the trajectory diffusion expert and keeps the Stage-1 VLM frozen. Use the converted Alpamayo 1.5 checkpoint as the base model and point `model.stage1_vlm_checkpoint_path` to your Stage-1 navigation output checkpoint.
+
+> **Before starting, fill in `local_dir` and `annotations_path`** in [configs/sft_stage2_nav.yaml](./configs/sft_stage2_nav.yaml) (both `train_dataset` and `val_dataset`)
+
+Use the converted Alpamayo 1.5 checkpoint as the base model and point `model.stage1_vlm_checkpoint_path` to your Stage-1 navigation output checkpoint.
 
 ```bash
 torchrun --nproc_per_node 8 -m alpamayo1_5_sft.train_hf \
   --config-path pkg://alpamayo1_5_sft/configs \
-  --config-name sft_stage2 \
+  --config-name sft_stage2_nav \
   model.pretrained_model_name_or_path=/path/to/Alpamayo-1.5-10B-A1-format \
   model.stage1_vlm_checkpoint_path=/path/to/output_stage1_nav/checkpoint-xxxx
 ```
@@ -209,9 +212,8 @@ cd $YOUR_HOME/alpamayo-recipes/recipes/alpamayo1_5_sft
 torchrun --nproc_per_node 8 \
   -m alpamayo1_5_sft.evaluate_hf \
   --config-path pkg://alpamayo1_5_sft/configs \
-  --config-name sft_stage2 \
-  evaluate.eval_ckpt=<path/to/output_stage2/checkpoint-xxxx> \
-  data.val_dataset.local_dir=<path/to/pai_dataset>
+  --config-name sft_stage2_nav \
+  evaluate.eval_ckpt=<path/to/output_stage2/checkpoint-xxxx> 
 ```
 
 > Eval is intended for trajectory checkpoints (Stage 2 produced from a navigation Stage-1 run). VQA Stage-1 outputs do not have a trajectory target and aren't covered by the distance metrics above.
