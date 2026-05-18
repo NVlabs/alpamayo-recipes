@@ -1,0 +1,39 @@
+defaults:
+  - sft_base
+  - /models/ar1_5_base@model
+  - override /vla_processor@data.train_dataset.vla_preprocess_args: vqa
+  - override /vla_processor@data.val_dataset.vla_preprocess_args: vqa
+  - _self_
+
+data:
+  train_dataset:
+    _target_: alpamayo.data.lingoqa.LingoQADataset
+    _recursive_: false
+    data_root: ???
+    parquet_name: train.parquet
+    local_dir: null
+    chunk_ids: null
+    use_default_keyframe: null
+    vla_preprocess_args:
+      generation_mode: false
+  val_dataset:
+    _target_: alpamayo.data.lingoqa.LingoQADataset
+    _recursive_: false
+    data_root: ???
+    parquet_name: val.parquet
+    local_dir: null
+    chunk_ids: null
+    use_default_keyframe: null
+    vla_preprocess_args:
+      generation_mode: true
+
+trainer:
+  ddp_find_unused_parameters: false
+  gradient_accumulation_steps: 4
+  learning_rate: 1e-5
+  warmup_steps: 500
+paths:
+  output_dir: output_stage1_lingoqa
+evaluate:
+  eval_ckpt: null
+task_name: alpamayo_r1_5_sft_stage1_lingoqa

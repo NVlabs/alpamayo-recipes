@@ -1,0 +1,6 @@
+_target_: alpamayo_r1.processor.qwen_processor.get_preprocess_data_fn_from_model_config
+components_order: ["image", "question", "answer"]
+components_prompt: ["answer"]
+label_components: ["answer"]
+include_camera_ids: true
+include_frame_nums: true
