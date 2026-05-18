@@ -27,9 +27,6 @@ First, define your working directory (all subsequent commands reference `$YOUR_H
 
 ```bash
 export YOUR_HOME="/path/to/your/workspace"
-```
-
-```bash
 git clone https://github.com/NVlabs/alpamayo-recipes.git $YOUR_HOME/alpamayo-recipes
 cd $YOUR_HOME/alpamayo-recipes/recipes/alpamayo1_sft
 uv venv a1_sft
