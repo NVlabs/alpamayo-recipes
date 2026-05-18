@@ -66,8 +66,8 @@ python scripts/download_pai.py \
   --output-dir /path/to/pai_dataset
 ```
 
-> `--chunk-ids` accepts a single id (`0`), multiple ids (`0 1`), or a range (`0-3`, which yields
-> chunks 0, 1, and 2). Omit it (or pass `None`) to download the full dataset (~97 TB).
+`--chunk-ids` accepts a single id (`0`), multiple ids (`0 1`), or a range (`0-3`, which yields
+chunks 0, 1, and 2). Omit it (or pass `None`) to download the full dataset (~97 TB).
 
 ### Dataset with additional CoC reasoning labels
 
@@ -101,11 +101,11 @@ Set `checkpoint_path` in [configs/models/ar1_base.yaml](configs/models/ar1_base.
 
 ## Run Stage 1 Fine-tuning
 
-> Alpamayo-1 uses Hydra, so you can extend or override configuration in a structured way.
+Alpamayo-1 uses Hydra, so you can extend or override configuration in a structured way.
 
-> **Weights & Biases:** To log runs to W&B, uncomment the `wandb` default, and set `report_to: wandb` under
-> `trainer` in [configs/sft_base.yaml](configs/sft_base.yaml). Additionally, fill in `team` and `project` in
-> [configs/wandb/default.yaml](configs/wandb/default.yaml), and have your W&B API key available when training starts.
+**Weights & Biases:** To log runs to W&B, uncomment the `wandb` default, and set `report_to: wandb` under
+`trainer` in [configs/sft_base.yaml](configs/sft_base.yaml). Additionally, fill in `team` and `project` in
+[configs/wandb/default.yaml](configs/wandb/default.yaml), and have your W&B API key available when training starts.
 
 ### Data loader
 
@@ -118,8 +118,8 @@ Adjust settings such as `dataloader_num_workers` or the learning rate in the con
 
 ### Stage 1 (CoC reasoining disabled)
 
-> Stage 1 fine-tunes the full VLM; DeepSpeed ZeRO-2 is enabled by default in the bundled config
-> for memory-efficient multi-GPU training.
+Stage 1 fine-tunes the full VLM; DeepSpeed ZeRO-2 is enabled by default in the bundled config
+for memory-efficient multi-GPU training.
 
 ```bash
 cd $YOUR_HOME/alpamayo-recipes/recipes/alpamayo1_sft
@@ -176,7 +176,7 @@ torchrun --nproc_per_node 8 \
   data.val_dataset.use_default_keyframe=false
 ```
 
-> The reasoning / clip-index paths are **relative to `data.*.local_dir`** — the dataset joins them onto `local_dir` internally. Pass `reasoning/ood_reasoning.parquet`, not the absolute path.
+The reasoning / clip-index paths are **relative to `data.*.local_dir`** — the dataset joins them onto `local_dir` internally. Pass `reasoning/ood_reasoning.parquet`, not the absolute path.
 
 Note: `reasoning_metadata` lets the dataset attach a `cot` field; `clip_index_metadata` ensures only reasoning-bearing clips are enumerated (otherwise non-reasoning clips reach the chat template without `cot`); `use_default_keyframe=false` makes `t0_us` come from each clip's real reasoning-event timestamp instead of the global `DEFAULT_T0_US = 5_100_000` (otherwise `get_reasoning_data` raises the `5100000 not found` ValueError above).
 
@@ -196,9 +196,9 @@ torchrun --nproc_per_node 8 \
   data.val_dataset.local_dir=<path/to/pai_dataset>
 ```
 
-> `model.pretrained_model_name_or_path` must be the same local folder used for Stage 1.
-> `model.stage1_vlm_checkpoint_path` is your Stage 1 Trainer output directory, e.g.
-> `output_stage1/checkpoint-3500` (contains `model.safetensors.index.json` and shards).
+`model.pretrained_model_name_or_path` must be the same local folder used for Stage 1.
+`model.stage1_vlm_checkpoint_path` is your Stage 1 Trainer output directory, e.g.
+`output_stage1/checkpoint-3500` (contains `model.safetensors.index.json` and shards).
 
 Loss curve:
 
