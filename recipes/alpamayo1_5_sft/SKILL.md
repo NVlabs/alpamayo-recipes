@@ -262,7 +262,7 @@ uv sync --active
 After every `uv sync`, verify the import contract the recipe assumes:
 
 ```bash
-python -c "from alpamayo_r1.processor.qwen_processor import \
+python -c "from alpamayo.processor.qwen_processor import \
   get_preprocess_data_fn_from_model_config, collate_fn_from_model_config; print('ok')"
 python -c "from alpamayo.data.pai_nav import PAIDatasetWithNav; print('ok')"   # nav
 python -c "from alpamayo.data.lingoqa import LingoQADataset; print('ok')"      # vqa
