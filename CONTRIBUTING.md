@@ -2,7 +2,7 @@
 
 Thank you for your interest in contributing to Alpamayo Recipes. This repository is a
 collection of end-to-end workflows around released Alpamayo models, including fine-tuning,
-RL post-training, evaluation, data curation, and related utilities.
+RL post-training, evaluation (open-loop, close-loop, etc), data curation, and related utilities.
 
 ## Repository Structure
 
@@ -116,24 +116,6 @@ checkout. Include:
 Use local paths and environment variables consistently, and avoid hardcoding user-specific paths.
 Do not include secrets, tokens, private dataset paths, generated checkpoints, or large artifacts in
 the repository.
-
-## Evaluation Recipes
-
-Evaluation workflows are welcome when they help users understand or reproduce behavior for
-released Alpamayo models. An evaluation recipe should be self-contained and should document:
-
-- model input, such as a local Hugging Face checkpoint path
-- dataset input, such as a local dataset root
-- sample selection input, such as a `clip_id`, clip manifest, or split definition
-- metrics and their definitions
-- command-line entry points and config files
-- expected output schema, such as JSON keys or metric names
-- a small example output for validation
-- any assumptions about cameras, calibration, timestamps, horizons, or coordinate frames
-
-If the recipe reports metrics such as ADE or minADE, define the horizon, units, aggregation, and
-any filtering logic in the README. Avoid presenting a community-contributed recipe as an official
-benchmark unless the maintainers have explicitly approved that framing.
 
 ## Validation Before Opening a Pull Request
 
