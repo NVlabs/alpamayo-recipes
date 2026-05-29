@@ -63,11 +63,16 @@ For a packaged recipe, follow the existing `pyproject.toml` pattern:
 ```toml
 [project]
 name = "alpamayo1-5-eval"
+version = "0.1.0"
 requires-python = "==3.12.*"
 dependencies = [
   "alpamayo_r1",
   "alpamayo-recipes",
 ]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = [".."]
