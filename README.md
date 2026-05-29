@@ -3,7 +3,7 @@
 A collection of end-to-end Alpamayo recipes for multiple versions (v1, v1.5, and beyond), designed
 to help developers quickly build, adapt, and deploy Alpamayo-based applications. This repo
 brings together battle-tested workflows across the Alpamayo ecosystem, including post-training
-recipes (supervised fine-tuning and reinforcement learning), auto-labeling and data curation workflows, etc.
+recipes (supervised fine-tuning and reinforcement learning), distillation scripts, quantization recipes, etc.
 Whether you are experimenting locally or building a full production stack, this repository is
 intended as the primary starting point for developers to learn, customize, and extend
 Alpamayo for their own use cases.
