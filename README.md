@@ -8,6 +8,11 @@ Whether you are experimenting locally or building a full production stack, this 
 intended as the primary starting point for developers to learn, customize, and extend
 Alpamayo for their own use cases.
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the repository layout, recipe packaging conventions,
+and guidance on adding new recipes for released Alpamayo models.
+
 ## Recipes
 
 Each recipe folder contains its own README with installation and training instructions.
