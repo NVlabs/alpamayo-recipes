@@ -4,7 +4,7 @@ defaults:
   - /vla_processor@data.val_dataset.vla_preprocess_args: default
 data:
   collate_fn:
-    _target_: alpamayo_r1.processor.qwen_processor.collate_fn_from_model_config
+    _target_: alpamayo.processor.qwen_processor.collate_fn_from_model_config
     _partial_: true
   train_dataset:
     _recursive_: false

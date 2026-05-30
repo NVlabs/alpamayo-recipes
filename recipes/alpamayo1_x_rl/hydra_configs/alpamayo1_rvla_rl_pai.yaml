@@ -16,7 +16,7 @@
 data:
   train:
     collate_fn:
-      _target_: alpamayo_r1.processor.qwen_processor.get_preprocess_data_fn_from_model_config
+      _target_: alpamayo.processor.qwen_processor.get_preprocess_data_fn_from_model_config
       _partial_: true
       model_config: ${data.train.dataset.model_config}
       include_camera_ids: ${data.train.dataset.vla_preprocess_args.include_camera_ids}
@@ -37,7 +37,7 @@ data:
         min_pixels: 163840
         max_pixels: 196608
       vla_preprocess_args:
-        _target_: alpamayo_r1.processor.qwen_processor.get_preprocess_data_fn_from_model_config
+        _target_: alpamayo.processor.qwen_processor.get_preprocess_data_fn_from_model_config
         include_camera_ids: false
         include_frame_nums: false
         components_order:

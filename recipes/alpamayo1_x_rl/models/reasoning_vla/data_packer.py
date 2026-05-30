@@ -22,7 +22,7 @@ from typing import Any, cast
 import alpamayo1_x_rl.state as alp_state
 import torch
 from alpamayo_r1.models.base_model import SPECIAL_TOKENS
-from alpamayo_r1.processor.qwen_processor import basic_collation_fn
+from alpamayo.processor.qwen_processor import basic_collation_fn
 from alpamayo1_x_rl.base_data_packer import BaseRLDataPacker
 from alpamayo1_x_rl.utils.trajectory_decode import decode_rollout_trajectory
 from vllm.inputs import TokensPrompt

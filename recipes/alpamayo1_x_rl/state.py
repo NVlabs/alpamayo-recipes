@@ -33,7 +33,7 @@ from hydra import compose, initialize
 from transformers import AutoConfig
 
 from alpamayo_r1.models.base_model import TrajectoryFusionMixin
-from alpamayo_r1.processor.qwen_processor import build_processor
+from alpamayo.processor.qwen_processor import build_processor
 
 
 @dataclass

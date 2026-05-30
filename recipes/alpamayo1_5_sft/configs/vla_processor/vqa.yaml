@@ -1,4 +1,4 @@
-_target_: alpamayo_r1.processor.qwen_processor.get_preprocess_data_fn_from_model_config
+_target_: alpamayo.processor.qwen_processor.get_preprocess_data_fn_from_model_config
 components_order: ["image", "question", "answer"]
 components_prompt: ["answer"]
 label_components: ["answer"]

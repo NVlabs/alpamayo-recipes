@@ -232,7 +232,7 @@ this is the single most common cause of opaque Hydra `InstantiationException`s
 (see [pitfalls](#common-failure-modes-and-the-fix)):
 
 ```bash
-python -c "from alpamayo_r1.processor.qwen_processor import \
+python -c "from alpamayo.processor.qwen_processor import \
   get_preprocess_data_fn_from_model_config, collate_fn_from_model_config; print('ok')"
 python -c "from alpamayo.data.pai import PAIDataset; print('ok')"
 ```
@@ -732,7 +732,7 @@ without it, `InstantiationException` hides the real cause behind a one-liner.
 
 | Symptom | Root cause | Fix |
 |---------|------------|-----|
-| `InstantiationException("Error locating target 'alpamayo_r1.processor.qwen_processor.get_preprocess_data_fn_from_model_config'")` | The installed `alpamayo_r1` doesn't export that symbol — the venv is stale or wasn't fully synced | Verify with `python -c "from alpamayo_r1.processor.qwen_processor import get_preprocess_data_fn_from_model_config"`; re-run `uv sync --active` |
+| `InstantiationException("Error locating target 'alpamayo.processor.qwen_processor.get_preprocess_data_fn_from_model_config'")` | The installed `alpamayo-recipes` doesn't export that symbol — the venv is stale or wasn't fully synced | Verify with `python -c "from alpamayo.processor.qwen_processor import get_preprocess_data_fn_from_model_config"`; re-run `uv sync --active` |
 | `InstantiationException` on `alpamayo.data.pai.PAIDataset` | The `alpamayo-recipes` editable install (`../../src`) didn't take | `uv pip show alpamayo-recipes` → re-run `uv sync --active` |
 | `AssertionError: cot not found in data but 'cot' in components_order` | You enabled CoC on the processor (`vla_processor/default.yaml`) but didn't wire the dataset side (`reasoning_metadata` + `clip_index_metadata` + `use_default_keyframe=false`) | See [Enable CoC reasoning (Stage 1)](#enable-coc-reasoning-stage-1) — all **four** pieces (processor config, dataset on disk with `--num-reasoning-clips`, dataset config pointing at the filtered index, default-keyframe disabled) must be set together |
 | `Key 'reasoning_metadata' is not in struct ... Could not override 'data.train_dataset.reasoning_metadata'` | Hydra struct mode rejects setting keys that aren't in the shipped YAML | Prefix the override with `+` to **append** rather than override: `+data.train_dataset.reasoning_metadata=...`. Same for `clip_index_metadata` and any other key not already in `sft_base.yaml` |

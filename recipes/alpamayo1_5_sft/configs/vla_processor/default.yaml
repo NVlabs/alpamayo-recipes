@@ -1,4 +1,4 @@
-_target_: alpamayo_r1.processor.qwen_processor.get_preprocess_data_fn_from_model_config
+_target_: alpamayo.processor.qwen_processor.get_preprocess_data_fn_from_model_config
 # Supported components:
 #   User:      image, traj_history, route, question, prompt
 #   Assistant:  cot, meta_action, traj_future, answer
