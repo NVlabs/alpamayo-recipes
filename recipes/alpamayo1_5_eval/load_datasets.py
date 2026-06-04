@@ -17,6 +17,8 @@
 
 from __future__ import annotations
 
+import logging
+import pathlib
 from dataclasses import dataclass
 from typing import Any
 
@@ -26,6 +28,74 @@ import torch
 from einops import rearrange
 
 import physical_ai_av
+
+logger = logging.getLogger(__name__)
+
+
+def _ensure_hf_cache_from_local_dir(local_dir: str | pathlib.Path, revision: str) -> None:
+    """Ensure the HF hub cache refs and symlinks are set up so offline mode works.
+
+    When ``local_dir`` has been populated by a previous online download, HuggingFace
+    Hub stores the actual files there but may be missing the ``refs/<revision>`` pointer
+    inside the hub cache (``~/.cache/huggingface/hub/``).  Without that pointer,
+    ``try_to_load_from_cache(revision=revision)`` cannot locate the files and offline
+    mode raises ``OfflineModeIsEnabled`` even though the data is present on disk.
+
+    This function:
+    1. Finds the existing snapshot directory inside the hub cache.
+    2. Creates ``refs/<revision>`` (mapping branch name → commit hash) if missing.
+    3. Creates symlinks inside the snapshot directory for any file that exists in
+       ``local_dir`` but is not yet represented in the snapshot, so that
+       ``try_to_load_from_cache`` returns a valid path for every local file.
+    """
+    try:
+        import huggingface_hub
+
+        repo_id = "nvidia/PhysicalAI-Autonomous-Vehicles"
+        repo_type = "dataset"
+        cache_dir_name = f"{repo_type}s--{repo_id.replace('/', '--')}"
+        repo_cache = pathlib.Path(huggingface_hub.constants.HF_HUB_CACHE) / cache_dir_name
+    except Exception:
+        logger.debug("Could not determine HF cache path; skipping cache setup.", exc_info=True)
+        return
+
+    snapshots_dir = repo_cache / "snapshots"
+    if not snapshots_dir.exists():
+        logger.debug("No snapshots dir found in HF cache; skipping cache setup.")
+        return
+
+    snapshot_dirs = [d for d in snapshots_dir.iterdir() if d.is_dir()]
+    if not snapshot_dirs:
+        logger.debug("No snapshot subdirectories found; skipping cache setup.")
+        return
+
+    snapshot_dir = snapshot_dirs[0]
+    snapshot_hash = snapshot_dir.name
+
+    refs_dir = repo_cache / "refs"
+    refs_dir.mkdir(exist_ok=True)
+    refs_file = refs_dir / revision
+    if not refs_file.exists():
+        refs_file.write_text(snapshot_hash)
+        logger.debug("Created HF cache refs/%s -> %s", revision, snapshot_hash)
+
+    local_path = pathlib.Path(local_dir).resolve()
+    created = 0
+    for src in local_path.rglob("*"):
+        if not src.is_file():
+            continue
+        rel = src.relative_to(local_path)
+        dst = snapshot_dir / rel
+        if not dst.exists():
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                dst.symlink_to(src)
+                created += 1
+            except OSError:
+                logger.debug("Could not create symlink %s -> %s", dst, src)
+
+    if created:
+        logger.debug("Created %d HF cache symlink(s) from local_dir.", created)
 
 
 @dataclass
@@ -92,6 +162,8 @@ class SingleClipDatasetLoader:
 
     def __init__(self, config: SingleClipDatasetConfig) -> None:
         self.config = config
+        if config.dataset_local_dir is not None and config.dataset_revision is not None:
+            _ensure_hf_cache_from_local_dir(config.dataset_local_dir, config.dataset_revision)
         self.avdi = physical_ai_av.PhysicalAIAVDatasetInterface(
             revision=config.dataset_revision,
             local_dir=config.dataset_local_dir,

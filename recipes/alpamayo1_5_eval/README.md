@@ -223,23 +223,36 @@ python -m alpamayo1_5_eval.evaluate_single_clip \
 Clip IDs and `t0_us` values for the 5 % evaluation subset are listed in
 `eval_samples_ood_val_5pct.csv` inside the dataset directory.
 
-### Offline VLM processor
+### Fully offline evaluation
 
-The model's `config.json` contains a `vlm_name_or_path` field that points to
-the VLM backbone (e.g. `Qwen/Qwen3-VL-8B-Instruct`).  When loading the
-processor, `transformers` may attempt a network request to that HuggingFace
-repo even if the model weights are loaded from a local path.
-
-To avoid any network access, download the backbone processor once and pass
-its local directory via `--vlm_name_or_path`:
+When running without internet access, set the following environment variables
+to prevent `transformers` and `datasets` from attempting HuggingFace network
+calls even when loading from local paths:
 
 ```bash
-# One-time download (only the processor / tokenizer files are needed)
+export TRANSFORMERS_OFFLINE=1
+export HF_DATASETS_OFFLINE=1
+```
+
+The model's `config.json` also contains a `vlm_name_or_path` field pointing to
+the VLM backbone (e.g. `Qwen/Qwen3-VL-8B-Instruct`).  Pass its local directory
+via `--vlm_name_or_path` to avoid any remaining network requests.
+
+One-time setup:
+
+```bash
+# Download only the processor / tokenizer files from the VLM backbone
 huggingface-cli download Qwen/Qwen3-VL-8B-Instruct \
   --include "*.json" "*.tiktoken" "*.model" \
   --local-dir /path/to/Qwen3-VL-8B-Instruct
+```
 
-# Then evaluate fully offline
+Then evaluate fully offline:
+
+```bash
+export TRANSFORMERS_OFFLINE=1
+export HF_DATASETS_OFFLINE=1
+
 python -m alpamayo1_5_eval.evaluate_single_clip \
   --clip_id 82acb8e5-abcf-4ea0-aa1a-7f18f6c79ff2 \
   --t0_us 5100000 \
@@ -268,8 +281,8 @@ Console (single clip):
   ...
 
 ========== Aggregate Summary ==========
-num_clips:      1
-mean_minADE:    0.373767 m
+total_clips:         1
+mean_minADE@6.4s:    0.373767 m
 ```
 
 Result JSON (top-level has `"summary"` and per-clip `"results"` list):
@@ -277,16 +290,16 @@ Result JSON (top-level has `"summary"` and per-clip `"results"` list):
 ```json
 {
   "summary": {
-    "num_clips": 1,
-    "mean_minADE": 0.373767
+    "total_clips": 1,
+    "mean_minADE@6.4s": 0.373767
   },
   "results": [
     {
       "clip_id": "030c760c-ae38-49aa-9ad8-f5650a545d26",
       "t0_us": 5100000,
-      "num_traj_samples": 1,
+      "num_traj_samples": 4,
       "minADE": 0.373767,
-      "all_ADE": [0.373767],
+      "all_ADE": [0.373767, 0.512345, 0.698765, 1.123456],
       "cot": [["Nudge to the left ..."]]
     }
   ]
@@ -304,6 +317,7 @@ python -m compileall .
 
 ## Known Limitations
 
-- This recipe evaluates a **single clip at a single timestamp**. For dataset-scale evaluation, use the `evaluate_hf.py` script in [alpamayo1_5_sft](../alpamayo1_5_sft/).
-- Streaming requires a valid `HF_TOKEN` and internet access at evaluation time.
+- Clips are evaluated **sequentially** on a single GPU; there is no cross-clip batch inference. For dataset-scale evaluation, use the `evaluate_hf.py` script in [alpamayo1_5_sft](../alpamayo1_5_sft/).
+- Each clip is evaluated at a **single timestamp** (`t0_us`). Multi-timestamp evaluation per clip is not supported in this recipe.
+- Streaming requires a valid `HF_TOKEN` and internet access at evaluation time.  For offline evaluation set `TRANSFORMERS_OFFLINE=1` and `HF_DATASETS_OFFLINE=1` and use `--dataset_local_dir` / `--vlm_name_or_path`.
 - The chain-of-thought output is not guaranteed to be deterministic across different hardware configurations even with a fixed seed.

@@ -294,24 +294,24 @@ class MinADEEvaluator:
         """Compute aggregate statistics over all clip results."""
         min_ades = [r["minADE"] for r in results]
         summary: dict[str, Any] = {
-            "num_clips": len(results),
-            "mean_minADE": statistics.mean(min_ades),
+            "total_clips": len(results),
+            "mean_minADE@6.4s": statistics.mean(min_ades),
         }
         if len(min_ades) > 1:
-            summary["std_minADE"] = statistics.stdev(min_ades)
-            summary["min_minADE"] = min(min_ades)
-            summary["max_minADE"] = max(min_ades)
+            summary["std_minADE@6.4s"] = statistics.stdev(min_ades)
+            summary["min_minADE@6.4s"] = min(min_ades)
+            summary["max_minADE@6.4s"] = max(min_ades)
         return summary
 
     @staticmethod
     def _print_summary(summary: dict[str, Any], n: int) -> None:
         print("\n========== Aggregate Summary ==========")
-        print(f"num_clips:      {n}")
-        print(f"mean_minADE:    {summary['mean_minADE']:.6f} m")
-        if "std_minADE" in summary:
-            print(f"std_minADE:     {summary['std_minADE']:.6f} m")
-            print(f"min_minADE:     {summary['min_minADE']:.6f} m")
-            print(f"max_minADE:     {summary['max_minADE']:.6f} m")
+        print(f"total_clips:         {n}")
+        print(f"mean_minADE@6.4s:    {summary['mean_minADE@6.4s']:.6f} m")
+        if "std_minADE@6.4s" in summary:
+            print(f"std_minADE@6.4s:     {summary['std_minADE@6.4s']:.6f} m")
+            print(f"min_minADE@6.4s:     {summary['min_minADE@6.4s']:.6f} m")
+            print(f"max_minADE@6.4s:     {summary['max_minADE@6.4s']:.6f} m")
 
     def _save(self, results: list[dict[str, Any]], summary: dict[str, Any]) -> None:
         save_path = Path(self.args.output)
