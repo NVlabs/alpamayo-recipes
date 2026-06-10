@@ -1,3 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import json
 import logging
 import os
@@ -95,9 +110,7 @@ def quantize_model(model, args, tokenizer=None, calibration_forward_loop=None):
     # it from tokenizer-based data, but vision modules often need custom args.
     if calibration_forward_loop is None:
         if tokenizer is None:
-            raise ValueError(
-                "tokenizer must be provided when calibration_forward_loop is None"
-            )
+            raise ValueError("tokenizer must be provided when calibration_forward_loop is None")
         calib_dataloader = get_dataset_dataloader(
             tokenizer=tokenizer,
             batch_size=32,
@@ -144,9 +157,9 @@ def quantize_model(model, args, tokenizer=None, calibration_forward_loop=None):
     # disable weight quantizers. This avoids runtime quantize_op on exported graphs,
     # which can otherwise fail TRT conversion due to lifted fake scale tensors.
     if args.debug:
-        print("================== quantize_model summary ==================")
+        logger.info("================== quantize_model summary ==================")
         mtq.print_quant_summary(model)
-    
+
     if args.weight_only:
         mtq.fold_weight(model)
 
@@ -224,6 +237,7 @@ def auto_quantize_model(
     # amax with a tiny positive value so the fake-quant output is 0 in that
     # channel (which is what a real FP8 kernel would produce).
     from modelopt.torch.quantization import tensor_quant as _mtq_tq
+
     _orig_fp8_eager = _mtq_tq._fp8_eager
 
     def _safe_fp8_eager(x, amax=None):
@@ -236,6 +250,7 @@ def auto_quantize_model(
 
     # --- Diagnostic: also clamp NaN/inf scores as a belt-and-suspenders fallback ---
     from modelopt.torch.quantization import algorithms as _mtq_algos
+
     _orig_get_score = _mtq_algos._get_auto_quantize_score
     _nan_counter = {"count": 0, "examples": []}
 
@@ -244,11 +259,13 @@ def auto_quantize_model(
         if not torch.isfinite(score):
             _nan_counter["count"] += 1
             if len(_nan_counter["examples"]) < 3:
-                _nan_counter["examples"].append({
-                    "grad_finite": torch.isfinite(grad_output).all().item(),
-                    "diff_finite": torch.isfinite(output_diff).all().item(),
-                    "shape": tuple(grad_output.shape),
-                })
+                _nan_counter["examples"].append(
+                    {
+                        "grad_finite": torch.isfinite(grad_output).all().item(),
+                        "diff_finite": torch.isfinite(output_diff).all().item(),
+                        "shape": tuple(grad_output.shape),
+                    }
+                )
             # Replace with 0 — treat this candidate as if it had no measurable
             # impact for this sample. If all samples for this (layer, recipe)
             # produce NaN, the aggregate score is 0 and LP picks the cheapest
@@ -262,7 +279,7 @@ def auto_quantize_model(
         with torch.autocast("cuda", dtype=torch.bfloat16):
             out = runtime_model.teacher_forced_flow_loss_forward(data=data)
         v_pred, v_target = out["v_pred"], out["v_target"]
-        print(
+        logger.info(
             f"[autoquant-fwd] v_pred: finite={torch.isfinite(v_pred).all().item()} "
             f"min={v_pred.min().item():.4g} max={v_pred.max().item():.4g} "
             f"abs_mean={v_pred.abs().mean().item():.4g} | "
@@ -273,7 +290,7 @@ def auto_quantize_model(
 
     def loss_func(output, batch):
         loss = torch.nn.functional.mse_loss(output["v_pred"], output["v_target"])
-        print(f"[autoquant-loss] loss={loss.item():.6g} finite={torch.isfinite(loss).item()}")
+        logger.info(f"[autoquant-loss] loss={loss.item():.6g} finite={torch.isfinite(loss).item()}")
         return loss
 
     try:
@@ -290,18 +307,18 @@ def auto_quantize_model(
             verbose=True,
         )
     finally:
-        print(f"[autoquant-nan] total non-finite score calls: {_nan_counter['count']}")
+        logger.info(f"[autoquant-nan] total non-finite score calls: {_nan_counter['count']}")
         for i, ex in enumerate(_nan_counter["examples"]):
-            print(f"[autoquant-nan][{i}] {ex}")
+            logger.info(f"[autoquant-nan][{i}] {ex}")
         _mtq_algos._get_auto_quantize_score = _orig_get_score
         _mtq_tq._fp8_eager = _orig_fp8_eager
         _mtq_tq.fp8_eager = _orig_fp8_eager
 
-    print("================== auto_quantize search_state ==================")
-    print(search_state)
+    logger.info("================== auto_quantize search_state ==================")
+    logger.info(search_state)
 
     if args.debug:
-        print("================== auto_quantize_model summary ==================")
+        logger.info("================== auto_quantize_model summary ==================")
         mtq.print_quant_summary(model)
 
     return model

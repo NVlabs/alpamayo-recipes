@@ -1,8 +1,11 @@
 [project]
-name = "alpamayo1_5"
+name = "alpamayo1_5-quant"
 version = "0.1.0"
 requires-python = "==3.12.*"
 dependencies = [
+  "alpamayo_r1", # common.logging
+  "alpamayo1_5",  # inference models, action_space, geometry.rotation,  etc.
+  "alpamayo-recipes",  # recipe-side utilities (chat_template, data, metrics, common, etc.)
   "accelerate>=1.12.0",
   "av>=16.0.1",
   "einops>=0.8.1",
@@ -11,7 +14,7 @@ dependencies = [
   "pandas>=2.3.3",
   "physical-ai-av==0.2.0",
   "pillow>=12.0.0",
-  "torch==2.12.0",
+  "torch==2.12.0", #switch back to 2.8 later
   "torchvision==0.27.0",
   "transformers==4.57.1",
   "flash-attn>=2.8.3",
@@ -21,8 +24,15 @@ dependencies = [
 ]
 
 [build-system]
-requires = ["uv_build>=0.9.7,<0.10.0"]
-build-backend = "uv_build"
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+# Look one level up (recipes/) so setuptools finds alpamayo1_x_rl/ as a proper package.
+# The editable install adds recipes/ to sys.path, making `alpamayo1_x_rl` importable
+# from within this directory once the venv is active.
+[tool.setuptools.packages.find]
+where = [".."]
+include = ["alpamayo1_5_quant*"]
 
 [dependency-groups]
 dev = [
@@ -35,6 +45,17 @@ dev = [
 
 [tool.uv]
 no-build-isolation-package = ["flash-attn"]
+override-dependencies = [
+    "torch==2.12.0", #switch back to 2.8 later
+]
+
+[tool.uv.sources]
+alpamayo1_5 = { git = "https://github.com/NVlabs/alpamayo1.5.git" }
+alpamayo_r1 = { git = "https://github.com/NVlabs/alpamayo.git" }
+alpamayo-recipes = { path = "../../src", editable = true }
+
+[tool.alpamayo]
+chat_template_version = "r1_5"
 
 [tool.ruff]
 line-length = 100
