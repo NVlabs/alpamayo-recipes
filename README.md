@@ -17,18 +17,19 @@ and guidance on adding new recipes for released Alpamayo models.
 
 Each recipe folder contains its own README with installation and training instructions.
 
-| Recipe | Description |
-|--------|-------------|
-| [`recipes/alpamayo1_sft/`](recipes/alpamayo1_sft/README.md) | Alpamayo 1 supervised fine-tuning (HuggingFace Trainer + DeepSpeed) |
-| [`recipes/alpamayo1_5_sft/`](recipes/alpamayo1_5_sft/README.md) | Alpamayo 1.5 SFT (HuggingFace Trainer + DeepSpeed) |
-| [`recipes/alpamayo1_x_rl/`](recipes/alpamayo1_x_rl/README.md) | Alpamayo 1 and 1.5 RL post-training (Cosmos-RL / GRPO) |
+| Recipe                                                              | Description                                                                             |
+| ------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| [`recipes/alpamayo1_sft/`](recipes/alpamayo1_sft/README.md)         | Alpamayo 1 supervised fine-tuning (HuggingFace Trainer + DeepSpeed)                     |
+| [`recipes/alpamayo1_5_sft/`](recipes/alpamayo1_5_sft/README.md)     | Alpamayo 1.5 SFT (HuggingFace Trainer + DeepSpeed)                                      |
+| [`recipes/alpamayo1_x_rl/`](recipes/alpamayo1_x_rl/README.md)       | Alpamayo 1 and 1.5 RL post-training (Cosmos-RL / GRPO)                                  |
+| [`recipes/alpamayo1_5_quant/`](recipes/alpamayo1_5_quant/README.md) | Alpamayo 1.5 quantization (Model Optimizer Toolkit / FP8 / NVFP4 + FP8 Mixed Precision) |
 
 ## Utility Scripts
 
-| Script | Purpose |
-|--------|---------|
-| `scripts/curate_pai_samples.py` | Curate a subset of PAI samples |
-| `scripts/convert_checkpoint.py` | Convert between Alpamayo 1 and 1.5 checkpoints |
-| `scripts/convert_release_config_to_training.py` | Convert a release checkpoint to training format |
-| `scripts/convert_cosmos_rl_checkpoint.py` | Convert a Cosmos-RL checkpoint to HuggingFace format |
-| `scripts/download_pai.py` | Download the Physical AI AV dataset from HuggingFace |
+| Script                                          | Purpose                                              |
+| ----------------------------------------------- | ---------------------------------------------------- |
+| `scripts/curate_pai_samples.py`                 | Curate a subset of PAI samples                       |
+| `scripts/convert_checkpoint.py`                 | Convert between Alpamayo 1 and 1.5 checkpoints       |
+| `scripts/convert_release_config_to_training.py` | Convert a release checkpoint to training format      |
+| `scripts/convert_cosmos_rl_checkpoint.py`       | Convert a Cosmos-RL checkpoint to HuggingFace format |
+| `scripts/download_pai.py`                       | Download the Physical AI AV dataset from HuggingFace |
