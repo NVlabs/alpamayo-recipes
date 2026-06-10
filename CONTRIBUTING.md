@@ -69,7 +69,11 @@ git push -u origin <local-branch>:<remote-branch>
 - At least one Alpamayo researcher will be assigned for the review.
 - While under review, mark your PRs as work-in-progress by prefixing the PR title with [WIP].
 
-4. Since there is no CI/CD process in place yet, the PR will be accepted and the corresponding issue closed only after adequate testing has been completed, manually, by the developer and/or Alpamayo researcher reviewing the code.
+4. Basic CPU-only CI runs on pull requests and pushes to `main`. The required baseline checks
+   validate whitespace in changed files, shared-package buildability, recipe lockfiles, Python
+   syntax, and lightweight repository tests. PRs that touch heavy training, inference, dataset, or
+   model-loading paths still need appropriate manual validation by the developer and/or Alpamayo
+   researcher reviewing the code.
 
 #### Signing Your Work
 
@@ -257,9 +261,21 @@ uv sync --active
 python -m compileall .
 ```
 
-If the recipe includes tests, run them from the recipe environment. If full training or evaluation
-requires gated datasets, large checkpoints, or multi-GPU hardware, include the smaller smoke test
-you ran and document any heavyweight validation that maintainers would need to run separately.
+The repository CI runs a CPU-only baseline on pull requests and pushes to `main`:
+
+```bash
+uv build --project src --sdist --wheel
+uv lock --check --project recipes/alpamayo1_sft
+uv lock --check --project recipes/alpamayo1_5_sft
+uv lock --check --project recipes/alpamayo1_x_rl
+python -m compileall -q src scripts recipes
+uv run --with pytest pytest tests -q
+```
+
+If the recipe includes tests, run them from the recipe environment. If full training, evaluation,
+or recipe runtime coverage requires gated datasets, large checkpoints, Torch runtime setup,
+specialized kernels, or multi-GPU hardware, include the smaller smoke test you ran and document any
+heavyweight validation that maintainers would need to run separately.
 
 ### Recipe Pull Request Scope
 
