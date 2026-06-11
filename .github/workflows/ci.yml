@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cpu:
+    name: CPU baseline
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Check changed-file whitespace
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git diff --check "${{ github.event.pull_request.base.sha }}" HEAD
+          elif [[ "${{ github.event_name }}" == "push" && "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]]; then
+            git diff --check "${{ github.event.before }}" HEAD
+          else
+            git diff-tree --check --root -r --no-commit-id HEAD
+          fi
+
+      - name: Build shared package
+        run: uv build --project src --sdist --wheel
+
+      - name: Check recipe lockfiles
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for pyproject in recipes/*/pyproject.toml; do
+            recipe_dir="$(dirname "$pyproject")"
+            uv lock --check --project "$recipe_dir"
+          done
+
+      - name: Compile Python sources
+        run: python -m compileall -q src scripts recipes
+
+      - name: Run CPU tests
+        run: uv run --with pytest pytest tests -q

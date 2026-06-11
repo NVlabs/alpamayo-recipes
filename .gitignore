@@ -1,4 +1,8 @@
 __pycache__/
+.pytest_cache/
+.venv/
+**/.venv/
+dist/
 outputs/*
 *.egg-info
 output_stage*
