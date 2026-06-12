@@ -14,12 +14,14 @@ jobs:
   cpu:
     name: CPU baseline
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -57,8 +59,24 @@ jobs:
             uv lock --check --project "$recipe_dir"
           done
 
+      - name: Build recipe packages
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          build_root="$(mktemp -d "${RUNNER_TEMP}/recipe-builds.XXXXXX")"
+          mkdir -p "${RUNNER_TEMP}/recipe-dists"
+          git archive --format=tar HEAD | tar -x -C "$build_root"
+          cd "$build_root"
+
+          for pyproject in recipes/*/pyproject.toml; do
+            recipe_dir="$(dirname "$pyproject")"
+            recipe_name="$(basename "$recipe_dir")"
+            uv build --project "$recipe_dir" --sdist --wheel --out-dir "${RUNNER_TEMP}/recipe-dists/${recipe_name}"
+          done
+
       - name: Compile Python sources
         run: python -m compileall -q src scripts recipes
 
       - name: Run CPU tests
-        run: uv run --with pytest pytest tests -q
+        run: uv run --with pytest --with pyyaml pytest tests -q

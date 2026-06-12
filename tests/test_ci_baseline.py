@@ -6,7 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 RECIPES_DIR = ROOT / "recipes"
-RECIPE_DIRS = tuple(sorted(path for path in RECIPES_DIR.iterdir() if path.is_dir()))
+RECIPE_DIRS = tuple(sorted(path.parent for path in RECIPES_DIR.glob("*/pyproject.toml")))
 CI_WORKFLOW = ROOT / ".github" / "workflows" / "ci.yml"
 
 
@@ -33,11 +33,13 @@ def test_cpu_ci_workflow_runs_required_baseline_checks() -> None:
 
     required_commands = [
         "uv build --project src --sdist --wheel",
+        'git archive --format=tar HEAD | tar -x -C "$build_root"',
         "python -m compileall -q src scripts recipes",
         "for pyproject in recipes/*/pyproject.toml; do",
         'recipe_dir="$(dirname "$pyproject")"',
         'uv lock --check --project "$recipe_dir"',
-        "uv run --with pytest pytest tests -q",
+        'uv build --project "$recipe_dir" --sdist --wheel',
+        "uv run --with pytest --with pyyaml pytest tests -q",
     ]
     for command in required_commands:
         assert command in cpu_job
@@ -46,6 +48,9 @@ def test_cpu_ci_workflow_runs_required_baseline_checks() -> None:
     cpu_job_lower = cpu_job.lower()
     for term in heavy_runtime_terms:
         assert term not in cpu_job_lower
+
+    assert "timeout-minutes:" in cpu_job
+    assert "persist-credentials: false" in cpu_job
 
 
 def test_shared_package_build_metadata_stays_lightweight() -> None:
