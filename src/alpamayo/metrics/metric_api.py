@@ -18,8 +18,9 @@ from typing import Mapping, MutableMapping
 import torch
 
 from alpamayo_r1.common import logging
+from alpamayo_r1.geometry import rotation
 from alpamayo.metrics.metric_utils import apply_prefix
-from alpamayo.metrics import distance_metrics
+from alpamayo.metrics import collision_metrics, distance_metrics
 
 # default vehicle size in meters
 EGO_VEHICLE_LWH = (4.0, 3.0, 2.0)
@@ -253,3 +254,135 @@ class DistanceMetrics(Metric):
         )
 
         return apply_prefix(self.prefix, metric_dict)
+
+
+class CollisionMetrics(Metric):
+    """Computes 2D collision metrics against obstacles using OBB edge-point sampling."""
+
+    def __init__(self, prefix: str = "", timestep_horizons: list[int] | None = None) -> None:
+        """Initialize collision metrics evaluator.
+
+        Args:
+            prefix: Prefix for trajectory keys in output_batch.
+            timestep_horizons: Future timestep indices at which to evaluate collisions.
+                Must be positive. Defaults to [1, 5, 10, 25, 50].
+        """
+        super().__init__()
+        self.prefix = prefix
+        if timestep_horizons is None:
+            timestep_horizons = [1, 5, 10, 25, 50]
+        for t in timestep_horizons:
+            if t <= 0:
+                raise ValueError("Requested timestep_horizons must all be positive!")
+        self.timestep_horizons = timestep_horizons
+
+    def evaluate(
+        self,
+        model: torch.nn.Module | None,
+        data_batch: Mapping[str, torch.Tensor],
+        output_batch: MutableMapping[str, torch.Tensor],
+    ) -> dict[str, torch.Tensor]:
+        """Compute collision metrics.
+
+        Requires ``data_batch`` to contain:
+            - ``ego_lwh``: [B, 3]
+            - ``ego_length_offset``: [B]
+            - ``ego_history_xyz``: [B, 1, Th, 3]
+            - ``ego_history_rot``: [B, 1, Th, 3, 3]
+            - ``obstacle_bbox_history``: [B, 1, N_obs, Th, 7] (xyz, lwh, yaw)
+            - ``obstacle_bbox_future``: [B, 1, N_obs, Tf, 7]
+
+        Requires ``output_batch`` to contain:
+            - ``{prefix}pred_xyz``: [B, N, K, Tf, 3]
+            - ``{prefix}pred_rot``: [B, N, K, Tf, 3, 3]
+
+        Returns:
+            Dict with ``collision/by_t=X.X`` keys mapping to [B] float tensors.
+        """
+        del model  # unused
+        if "obstacle_bbox_future" not in data_batch:
+            logger.warning("No obstacle future bounding boxes found in data_batch.")
+            return {}
+        if self.prefix + "pred_xyz" not in output_batch:
+            logger.warning(f"No predictions with prefix {self.prefix} found in output_batch.")
+            return {}
+
+        if data_batch["ego_future_xyz"].shape[1] > 1:
+            logger.info("Multiple traj group provided, only evaluating the last one.")
+
+        obstacle_xyz_lwh_yaw = data_batch["obstacle_bbox_history"][:, -1, :, -1, :]
+        obstacle_box = collision_metrics.BoxObstacle(
+            obstacle_xyz_lwh_yaw[:, :, 0],
+            obstacle_xyz_lwh_yaw[:, :, 1],
+            obstacle_xyz_lwh_yaw[:, :, -1],
+            obstacle_xyz_lwh_yaw[:, :, 3],
+            obstacle_xyz_lwh_yaw[:, :, 4],
+        )
+
+        ego_xyz = data_batch["ego_history_xyz"][:, -1, -1, :]
+        ego_rot = data_batch["ego_history_rot"][:, -1, -1, :, :]
+        ego_heading = rotation.so3_to_yaw_torch(ego_rot)
+
+        ego_length = data_batch["ego_lwh"][:, 0]
+        ego_width = data_batch["ego_lwh"][:, 1]
+        ego_length_offset = data_batch["ego_length_offset"]
+
+        ego_box = collision_metrics.BoxObstacle(
+            x=ego_xyz[:, None, 0],
+            y=ego_xyz[:, None, 1],
+            heading=ego_heading[:, None],
+            length=ego_length[:, None],
+            width=ego_width[:, None],
+            length_offset=ego_length_offset[:, None],
+        )
+
+        current_collisions = ego_box.in_collision(obstacle_box)
+        current_collisions = torch.where(current_collisions.isnan(), False, current_collisions)
+        current_in_collision_with_any = current_collisions.any(dim=1)
+
+        obstacle_xyz_lwh_yaw = data_batch["obstacle_bbox_future"][:, -1]
+        obstacle_box = collision_metrics.BoxObstacle(
+            x=obstacle_xyz_lwh_yaw[:, :, None, :, 0],
+            y=obstacle_xyz_lwh_yaw[:, :, None, :, 1],
+            heading=obstacle_xyz_lwh_yaw[:, :, None, :, -1],
+            length=obstacle_xyz_lwh_yaw[:, :, None, :, 3],
+            width=obstacle_xyz_lwh_yaw[:, :, None, :, 4],
+        )
+
+        ego_xyz_pred = output_batch[self.prefix + "pred_xyz"]
+        ego_rot_pred = output_batch[self.prefix + "pred_rot"]
+        ego_heading_pred = rotation.so3_to_yaw_torch(ego_rot_pred)
+
+        gt_xyz = data_batch["ego_future_xyz"][:, -1, None, None, :, :]
+        ade = (ego_xyz_pred - gt_xyz).pow(2).sum(-1).sqrt().mean(-1)
+        min_ade_index = ade.argmin(-1)
+
+        closest_ego_xyz = torch.take_along_dim(
+            ego_xyz_pred, min_ade_index[:, :, None, None, None], dim=2
+        ).squeeze(2)
+        closest_ego_heading = torch.take_along_dim(
+            ego_heading_pred, min_ade_index[:, :, None, None], dim=2
+        ).squeeze(2)
+
+        ego_box = collision_metrics.BoxObstacle(
+            x=closest_ego_xyz[..., 0].unsqueeze(1),
+            y=closest_ego_xyz[..., 1].unsqueeze(1),
+            heading=closest_ego_heading.unsqueeze(1),
+            length=ego_length[:, None, None, None],
+            width=ego_width[:, None, None, None],
+            length_offset=ego_length_offset[:, None, None, None],
+        )
+
+        collisions = ego_box.in_collision(obstacle_box)
+        collisions = torch.where(collisions.isnan(), False, collisions)
+        in_collision_with_any = collisions.any(dim=1)
+
+        output: dict[str, torch.Tensor] = {
+            "collision/by_t=0.0": current_in_collision_with_any.float(),
+        }
+        for t in self.timestep_horizons:
+            output[f"collision/by_t={t / 10:0.1f}"] = (
+                in_collision_with_any[:, :, :t].any(dim=-1).float().mean(dim=1)
+            )
+
+        return output

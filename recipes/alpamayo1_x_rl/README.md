@@ -146,6 +146,28 @@ python scripts/curate_pai_samples.py \
   --output-path "$ALPAMAYO_PAI_LOCAL_DIR/clip_index_mini.parquet"
 ```
 
+#### Dataset with additional obstacle labels
+
+Collision reward requires obstacle bounding-box labels. When preparing a dataset
+for collision-aware RL training, make sure `obstacle.offline` is included in
+`--labels`; otherwise obstacle loading and collision reward computation will not
+have the required obstacle annotations.
+
+The following command downloads a reproducible random subset of reasoning clips
+and all chunks needed by those clips, including ego motion, vehicle dimensions,
+reasoning labels, and obstacle labels:
+
+```bash
+export ALPAMAYO_PAI_REASONING_OBSTACLE_LOCAL_DIR="$YOUR_HOME/PAI_reasoning_obstacle"
+python scripts/download_pai.py --only-reasoning-chunks \
+  --num-reasoning-clips 128 \
+  --camera camera_front_wide_120fov camera_cross_left_120fov camera_cross_right_120fov camera_front_tele_30fov \
+  --calibration camera_intrinsics sensor_extrinsics vehicle_dimensions \
+  --labels egomotion egomotion.offline obstacle.offline \
+  --reasoning ood_reasoning.parquet \
+  --output-dir "$ALPAMAYO_PAI_REASONING_OBSTACLE_LOCAL_DIR"
+```
+
 #### Dataset with additional reasoning labels
 
 We released a set of reasoning labels in the PAI dataset. To download a subset of clips with reasoning labels, run the following script:
@@ -256,6 +278,50 @@ With the default settings for reasoning data training, you should see reasoning 
 
 <p align="center">
   <img src="assets/local_training_reward_curves_reasoning.png" alt="Local training reward curves with reasoning data" width="700">
+</p>
+
+#### RL with joint reasoning-motion-collision reward (local 1 node test)
+
+This mode adds collision reward on top of the joint reasoning-motion setup. It
+requires the reasoning dataset from step 5 with `obstacle.offline` included in
+`--labels`, because the collision reward reads future obstacle boxes from those
+labels. The local helper script
+[`run_rl_local_test_signal_node.sh`](run_rl_local_test_signal_node.sh) provides
+an end-to-end template for this run.
+
+Set `ALPAMAYO_PAI_REASONING_OBSTACLE_LOCAL_DIR` to the dataset directory created
+in step 5, and make sure the TOML config points to the local Alpamayo checkpoint
+and the cached Lingo-Judge model:
+
+```bash
+cd "$ALPAMAYO_WORKSPACE"
+
+export HYDRA_FULL_ERROR=1
+export COSMOS_LOG_LEVEL=INFO
+export ALPAMAYO_PAI_REASONING_OBSTACLE_LOCAL_DIR="$YOUR_HOME/PAI_reasoning_obstacle"
+export WANDB_API_KEY="<your_wandb_api_key>"
+export WANDB_ENTITY="<your_wandb_entity>"
+
+if [ -n "${WANDB_API_KEY:-}" ]; then
+  wandb login
+fi
+
+cosmos-rl \
+  --config recipes/alpamayo1_x_rl/toml/alpamayo_rvla_rl_local_test_with_reasoning_collision.toml \
+  --policy 1 \
+  --rollout 1 \
+  --log-dir "$ALPAMAYO_LOG_DIR" \
+  recipes/alpamayo1_x_rl/models/reasoning_vla/alpamayo_cosmos_rl_post_training_reasoning_collision_entry.py
+```
+
+With the local reasoning-collision config, reward metrics are expected to be
+noisy at each step because each update uses stochastic rollout groups on a small
+subset. Track the smoothed trends: `train/reward_mean` and `train/reward` should
+improve, `train/traj_L2` should decrease, `train/reasoning_score` should
+increase, and `train/collision_cost` should remain stable or slightly decrease.
+
+<p align="center">
+  <img src="assets/collision_reward.jpg" alt="Local training reward curves with reasoning and collision rewards" width="900">
 </p>
 
 ### 7. Export the RL checkpoint for inference

@@ -25,7 +25,7 @@ example: only download a reproducible random subset of N reasoning clips (and th
 python scripts/download_pai.py --only-reasoning-chunks --num-reasoning-clips 64 \
      --camera camera_front_wide_120fov camera_cross_left_120fov camera_cross_right_120fov camera_front_tele_30fov \
      --calibration camera_intrinsics sensor_extrinsics vehicle_dimensions --labels egomotion egomotion.offline obstacle.offline \
-    --reasoning ood_reasoning.parquet --output-dir ./PAI_reasoning
+    --reasoning ood_reasoning.parquet --output-dir ./PAI_reasoning_obstacle
 """
 
 from __future__ import annotations
@@ -115,7 +115,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--num-reasoning-clips",
         type=int,
-        default=None,
+        default=16,
         dest="num_reasoning_clips",
         help=(
             "Only valid with --only-reasoning-chunks. Randomly sample N clips from "
