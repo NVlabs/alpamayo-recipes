@@ -6,7 +6,7 @@ dependencies = [
   "alpamayo_r1",  # inference models, action_space, geometry.rotation, common.logging, etc.
   "alpamayo-recipes",  # recipe-side utilities (chat_template, data, metrics, common, etc.)
   "cosmos-rl",
-  "diffusers",  # diffusion/flow_matching.py uses diffusers.utils.torch_utils.randn_tensor
+  "diffusers>=0.37.1",  # diffusion/flow_matching.py uses diffusers.utils.torch_utils.randn_tensor
   "einops>=0.8.1",
   "hydra-core>=1.3.2",
   "torch==2.8.0",
