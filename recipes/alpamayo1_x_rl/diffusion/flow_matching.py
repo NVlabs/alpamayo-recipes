@@ -444,7 +444,7 @@ class FlowMatching(BaseDiffusion):
         sde_type: Optional[str] = "sde",
         use_classifier_free_guidance: bool = False,
         temperature: float = 1.0,
-    ) -> dict[str, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         """SDE integration for flow matching.
 
         Args:
