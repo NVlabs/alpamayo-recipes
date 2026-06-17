@@ -18,6 +18,7 @@ import logging
 import os
 
 import huggingface_hub
+import pandas as pd
 import torch
 from huggingface_hub import snapshot_download
 
@@ -204,7 +205,9 @@ def auto_quantize_model(
     def _one_epoch():
         for clip_id in clip_ids:
             data = load_physical_aiavdataset(clip_id, t0_us=t0_us)
-            messages = helper.create_message(data["image_frames"].flatten(0, 1))
+            messages = helper.create_message(
+                data["image_frames"].flatten(0, 1), camera_indices=data["camera_indices"]
+            )
             inputs = processor.apply_chat_template(
                 messages,
                 tokenize=True,
@@ -322,3 +325,17 @@ def auto_quantize_model(
         mtq.print_quant_summary(model)
 
     return model
+
+
+def read_clip_ids_from_parquet(parquet_path: str) -> list[str]:
+    """Reads clip_ids from parquet. Returns unique clip_ids preserving first-occurrence order."""
+    df = pd.read_parquet(str(parquet_path))
+    cols_lower = {c.lower(): c for c in df.columns}
+    clip_ids = df[cols_lower["key"]].astype(str).tolist()
+    seen = set()
+    uniq = []
+    for cid in clip_ids:
+        if cid not in seen:
+            seen.add(cid)
+            uniq.append(cid)
+    return uniq
