@@ -6,11 +6,18 @@ This Recipe defines a reproducible post-training quantization (PTQ) procedure fo
 
 This recipe is tested in the following settings.
 
+- NVIDIA 5090 GPU with CUDA 12
 - NVIDIA B300 GPU with CUDA 13
 - Python 3.12
-- Python Libraries: torch==2.8.0, torchvision==0.27.0, nvidia-modelopt==0.43.0
+- Python Libraries: torch==2.8.0, torchvision==0.23.0, nvidia-modelopt==0.43.0
 
-**NVIDIA Model Optimizer (ModelOpt)** is a library comprising state-of-the-art model optimization techniques including quantization and sparsity to compress models. In this recipe, we utilize ModelOpt to quantize Alpamayo 1.5.
+**NVIDIA Model Optimizer (ModelOpt)** is a library comprising state-of-the-art model optimization techniques including quantization and sparsity to compress models. In this recipe, we utilize ModelOpt to post train quantize Alpamayo 1.5 losslessly.
+
+| Quantization     | Parameter Size | xChange |
+| ---------------- | -------------- | ------- |
+| BF16             | ~22 GB         | 1.00x   |
+| FP8              | ~13 GB         | 1.70x   |
+| Autoquant 6.5BPE | ~10 GB         | 2.20x   |
 
 ## Table of contents
 
@@ -109,6 +116,7 @@ The quantization path is controlled by the following arguments:
 - `--calib_parquet <path>`: calibration clip source. Defaults to `0417_5k_train_set_for_calibration_25.10.parquet`.
 - `--num_of_calib_clips <N>`: number of calibration clips (1–5000). Defaults to `100`.
 - `--save_model_dir <path>`: directory under which the quantized model is saved. **Required.** The checkpoint is written to a subdirectory named after the format and calibration settings (e.g. `alpamayo1.5_fp8_calib100`).
+- `--fake_quant`: save a checkpoint with the Q/DQ nodes placed but the original weights preserved. For use with downstream SDKs like TensorRT
 
 ### FP8 quantization
 

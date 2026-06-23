@@ -245,6 +245,13 @@ def main():
     )
     ap.add_argument("--num_of_calib_clips", type=int, default=100)
     ap.add_argument("--save_model_dir", type=str, required=True)
+    ap.add_argument(
+        "--fake_quant",
+        action="store_true",
+        help="Save a checkpoint with the Q/DQ nodes placed but the original (FP16) weights "
+        "preserved, for use with downstream SDKs like TensorRT. By default the model is "
+        "compressed with mtq.compress() so the saved weights are real FP8/NVFP4 and reduce VRAM.",
+    )
     args = ap.parse_args()
 
     script_dir = Path(__file__).resolve().parent
@@ -306,12 +313,22 @@ def main():
         )
     model.eval()
 
+    # Compress fake-quant (simulated QDQ) weights into the real low-bit format so the saved
+    # checkpoint actually stores FP8/NVFP4 weights and reduces VRAM. Opt out with --fake_quant.
+    if not args.fake_quant:
+        import modelopt.torch.quantization as mtq
+
+        logger.info("Compressing quantized weights to real low-bit format (mtq.compress) ...")
+        mtq.compress(model)
+        logger.info("Compression complete.")
+
     save_dir = os.path.join(
         args.save_model_dir,
         f"alpamayo1.5_{args.quant_format}"
         f"{'_' + str(args.auto_quantize_bits) + 'bits' if args.quant_format == 'auto' else ''}"
         f"{'_weight_only' if args.quant_weight_only else ''}"
-        f"_calib{args.num_of_calib_clips}",
+        f"_calib{args.num_of_calib_clips}"
+        f"{'_fakequant' if args.fake_quant else ''}",
     )
     os.makedirs(save_dir, exist_ok=True)
     logger.info(f"Saving quantized model to: {save_dir}")
