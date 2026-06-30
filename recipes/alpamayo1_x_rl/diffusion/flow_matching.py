@@ -227,7 +227,7 @@ class FlowMatching(BaseDiffusion):
         inference_guidance_weight: float | None = None,
         use_classifier_free_guidance: bool | None = None,
         temperature: float = 1.0,
-        generator: torch.Generator | None = None,
+        generator: torch.Generator | list[torch.Generator] | None = None,
     ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
         """Euler integration for flow matching.
 
@@ -244,14 +244,21 @@ class FlowMatching(BaseDiffusion):
             inference_guidance_weight: The weight of the guidance during inference.
             use_classifier_free_guidance: Whether to use classifier free guidance.
             temperature: Scaling factor for the initial noise.
-            generator: The generator used for initial noise.
+            generator: The generator used for initial noise. A list of
+                generators (one per batch row) draws each row from its own
+                generator, enabling batched per-row deterministic sampling.
 
         Returns:
             torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
                 The final sampled tensor [B, *x_dims] if return_all_steps is False,
                 otherwise a tuple of all sampled tensors [B, T, *x_dims] and the time steps [T].
         """
-        x = torch.randn(batch_size, *self.x_dims, device=device, generator=generator)
+        # randn_tensor indexes a generator list per batch row; require one per row.
+        if isinstance(generator, list) and len(generator) != batch_size:
+            raise ValueError(
+                f"generator list length {len(generator)} must equal batch_size {batch_size}"
+            )
+        x = randn_tensor((batch_size, *self.x_dims), generator=generator, device=device)
         x = x * temperature
         inference_step = inference_step or self.num_inference_steps
         timesteps = torch.linspace(0.0, 1.0, inference_step + 1, device=device)
@@ -291,7 +298,7 @@ class FlowMatching(BaseDiffusion):
         inference_guidance_weight: float | None = None,
         use_classifier_free_guidance: bool | None = None,
         temperature: float = 1.0,
-        generator: torch.Generator | None = None,
+        generator: torch.Generator | list[torch.Generator] | None = None,
     ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
         """Midpoint integration for flow matching.
 
@@ -308,14 +315,21 @@ class FlowMatching(BaseDiffusion):
             inference_guidance_weight: The weight of the guidance during inference.
             use_classifier_free_guidance: Whether to use classifier free guidance.
             temperature: Scaling factor for the initial noise.
-            generator: The generator used for initial noise.
+            generator: The generator used for initial noise. A list of
+                generators (one per batch row) draws each row from its own
+                generator, enabling batched per-row deterministic sampling.
 
         Returns:
             torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
                 The final sampled tensor [B, *x_dims] if return_all_steps is False,
                 otherwise a tuple of all sampled tensors [B, T, *x_dims] and the time steps [T].
         """
-        x = torch.randn(batch_size, *self.x_dims, device=device, generator=generator)
+        # randn_tensor indexes a generator list per batch row; require one per row.
+        if isinstance(generator, list) and len(generator) != batch_size:
+            raise ValueError(
+                f"generator list length {len(generator)} must equal batch_size {batch_size}"
+            )
+        x = randn_tensor((batch_size, *self.x_dims), generator=generator, device=device)
         x = x * temperature
         inference_step = inference_step or self.num_inference_steps
         timesteps = torch.linspace(0.0, 1.0, inference_step + 1, device=device)
@@ -440,7 +454,7 @@ class FlowMatching(BaseDiffusion):
         inference_guidance_weight: float | None = None,
         noise_level: float = 0.7,
         samples_list: list[torch.Tensor] | None = None,
-        generator: Optional[torch.Generator] = None,
+        generator: torch.Generator | list[torch.Generator] | None = None,
         sde_type: Optional[str] = "sde",
         use_classifier_free_guidance: bool = False,
         temperature: float = 1.0,
@@ -460,7 +474,9 @@ class FlowMatching(BaseDiffusion):
             inference_guidance_weight: The weight of the guidance during inference.
             noise_level: The noise level.
             samples_list: The samples list.
-            generator: The generator.
+            generator: The generator(s) for the initial noise and per-step SDE
+                variance noise. A list (one per batch row) seeds each row
+                independently for batched per-row deterministic sampling.
             sde_type: The SDE type.
             use_classifier_free_guidance: Whether to use classifier free guidance.
             temperature: Scaling factor for the initial noise.
@@ -468,13 +484,18 @@ class FlowMatching(BaseDiffusion):
         if self.use_classifier_free_guidance and unguided_step_fn is None:
             raise ValueError("unguided_step_fn is required when using classifier free guidance")
 
+        # randn_tensor indexes a generator list per batch row; require one per row.
+        if isinstance(generator, list) and len(generator) != batch_size:
+            raise ValueError(
+                f"generator list length {len(generator)} must equal batch_size {batch_size}"
+            )
         if samples_list is not None:
             assert len(samples_list) == inference_step + 1, (
                 "samples_list must have length inference_step + 1"
             )
             x = samples_list[0]
         else:
-            x = torch.randn(batch_size, *self.x_dims, device=device, generator=generator)
+            x = randn_tensor((batch_size, *self.x_dims), generator=generator, device=device)
             x = x * temperature
         all_steps = [x]
         if timesteps is not None:
@@ -574,7 +595,7 @@ class FlowMatching(BaseDiffusion):
         sample: torch.FloatTensor,
         noise_level: float = 0.7,
         next_sample: Optional[torch.FloatTensor] = None,
-        generator: Optional[torch.Generator] = None,
+        generator: torch.Generator | list[torch.Generator] | None = None,
         sde_type: Optional[str] = "sde",
     ):
         """Predict the sample from the previous timestep by reversing the SDE. This function
@@ -587,8 +608,9 @@ class FlowMatching(BaseDiffusion):
                 The current discrete timestep in the diffusion chain.
             sample (`torch.FloatTensor`):
                 A current instance of a sample created by the diffusion process.
-            generator (`torch.Generator`, *optional*):
-                A random number generator.
+            generator (`torch.Generator | list[torch.Generator]`, *optional*):
+                A random number generator, or one generator per batch row for
+                per-row deterministic variance noise.
         """
         # bf16 can overflow here when compute prev_sample_mean, we must convert all variable to fp32
         model_output = model_output.float()
