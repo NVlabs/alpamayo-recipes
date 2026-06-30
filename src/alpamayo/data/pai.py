@@ -15,7 +15,9 @@
 
 from typing import Any
 
+import numpy as np
 import torch
+from alpamayo.data.decoders.obstacle_decoder_pai import decode_obstacles_pai
 from alpamayo.data.pai_utils import PhysicalAIAVDatasetLocalInterface
 from alpamayo_r1.load_physical_aiavdataset import load_physical_aiavdataset
 from hydra.utils import instantiate
@@ -43,6 +45,7 @@ class PAIDataset(Dataset):
         num_future_steps: int = 64,
         time_step: float = 0.1,
         reasoning_metadata: str | None = None,
+        load_obstacles: bool = False,
     ):
         """Initialize dataset.
 
@@ -67,6 +70,8 @@ class PAIDataset(Dataset):
             time_step: Seconds per step between trajectory samples.
             reasoning_metadata: Filename under ``local_dir`` for the reasoning parquet, in PAI
                 dataset it is "reasoning/ood_reasoning.parquet". If None, no reasoning data will be loaded.
+            load_obstacles: If True, load obstacle.offline labels and decode them
+                into ``obstacle_bbox_history`` / ``obstacle_bbox_future`` tensors.
         """
         self.avdi = PhysicalAIAVDatasetLocalInterface(
             local_dir=local_dir,
@@ -75,6 +80,9 @@ class PAIDataset(Dataset):
             clip_index_metadata=clip_index_metadata,
             reasoning_metadata=reasoning_metadata,
         )
+        self.load_obstacles = load_obstacles
+        if self.load_obstacles:
+            self.avdi.filter_clips_by_feature_presence(["obstacle.offline"])
         self.clip_ids = self.avdi.get_all_clip_ids()
         self.include_extr_intr = include_extr_intr
         self.use_default_keyframe = use_default_keyframe
@@ -132,6 +140,43 @@ class PAIDataset(Dataset):
             sample_data["ego_length_offset"] = torch.tensor(
                 vehicle_dimensions.rear_axle_to_bbox_center / vehicle_dimensions.length
             )
+
+        if self.load_obstacles:
+            obstacle_df = self.avdi.get_clip_feature(clip_id, "obstacle.offline")
+            egomotion_interp = self.avdi.get_clip_feature(clip_id, "egomotion")
+            t0_us_int = int(t0_us)
+            time_step_us = int(self.time_step * 1_000_000)
+            history_ts_us = np.array(
+                [
+                    t0_us_int + int(i * time_step_us)
+                    for i in range(-(self.num_history_steps - 1), 1)
+                ],
+                dtype=np.int64,
+            )
+            future_ts_us = np.array(
+                [
+                    t0_us_int + int(i * time_step_us)
+                    for i in range(1, self.num_future_steps + 1)
+                ],
+                dtype=np.int64,
+            )
+            obstacle_data = decode_obstacles_pai(
+                obstacle_df=obstacle_df,
+                egomotion_interp=egomotion_interp,
+                t0_us=t0_us_int,
+                history_timestamps_us=history_ts_us,
+                future_timestamps_us=future_ts_us,
+            )
+            sample_data.update(obstacle_data)
+
+            if "ego_lwh" not in sample_data:
+                vehicle_dimensions = self.avdi.get_clip_feature(clip_id, "vehicle_dimensions")
+                sample_data["ego_lwh"] = torch.tensor(
+                    [vehicle_dimensions.length, vehicle_dimensions.width, vehicle_dimensions.height]
+                )
+                sample_data["ego_length_offset"] = torch.tensor(
+                    vehicle_dimensions.rear_axle_to_bbox_center / vehicle_dimensions.length
+                )
 
         if self.reshape_tensors_for_rl:
             image_frames = sample_data["image_frames"]

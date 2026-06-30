@@ -109,6 +109,10 @@ class PhysicalAIAVDatasetLocalInterface:
         self.sensor_presence = pd.read_parquet(
             os.path.join(self.local_dir, "metadata/feature_presence.parquet")
         )
+        self._refresh_chunk_sensor_presence()
+
+    def _refresh_chunk_sensor_presence(self) -> None:
+        """Refresh per-chunk feature presence from the current clip index."""
         self.chunk_sensor_presence = (
             pd.concat(
                 [self.clip_index[["chunk"]], self.sensor_presence.select_dtypes(include=bool)],
@@ -117,6 +121,35 @@ class PhysicalAIAVDatasetLocalInterface:
             .groupby("chunk")
             .any()
         )
+
+    def filter_clips_by_feature_presence(self, required_features: Iterable[str]) -> None:
+        """Filter clip index to clips that have all required features."""
+        required_features = list(required_features)
+        if len(required_features) == 0:
+            return
+
+        missing_features = [
+            feature for feature in required_features if feature not in self.sensor_presence.columns
+        ]
+        if len(missing_features) > 0:
+            raise KeyError(
+                f"Required features {missing_features} are missing from feature_presence.parquet"
+            )
+
+        presence = self.sensor_presence.reindex(self.clip_index.index)
+        keep_mask = presence[required_features].fillna(False).all(axis=1)
+        removed = int((~keep_mask).sum())
+        self.clip_index = self.clip_index.loc[keep_mask]
+
+        if removed > 0:
+            logger.info(
+                "[PAIDataset] filter_clips_by_feature_presence: "
+                "removed %d rows missing %s, remaining %d rows",
+                removed,
+                required_features,
+                len(self.clip_index),
+            )
+        self._refresh_chunk_sensor_presence()
 
     @staticmethod
     def _read_reasoning_data(reasoning_df: pd.DataFrame) -> dict[str, dict[str, Any]]:
@@ -144,7 +177,11 @@ class PhysicalAIAVDatasetLocalInterface:
             for ev in parsed:
                 if isinstance(ev, dict) and "event_start_timestamp" in ev:
                     ts_list.append(int(ev["event_start_timestamp"]))
-                    cot_list.append(str(ev.get("cot", "")))
+                    cot = ev.get("cot", "")
+                    if not str(cot).strip():
+                        # Some exported reasoning metadata uses "coc" for the same supervision.
+                        cot = ev.get("coc", "")
+                    cot_list.append(str(cot))
             out[cid] = {
                 "event_t0s": np.asarray(ts_list, dtype=np.int64),
                 "cot": cot_list,
@@ -155,7 +192,7 @@ class PhysicalAIAVDatasetLocalInterface:
         """Filter clip_index using ``self.reasoning_db`` per-clip ``event_t0s`` / ``cot``.
 
         Each reasoning entry comes from parsed ``events`` (``event_start_timestamp``,
-        ``cot``). Keeps only events where ``event_t0 >= start_safe_margin_seconds``
+        ``cot`` / ``coc``). Keeps only events where ``event_t0 >= start_safe_margin_seconds``
         (in µs) and         ``event_t0 + end_safe_margin_seconds`` (in µs) <= ``CLIP_RELATIVE_DURATION_US``
         (20 s, fixed relative clip length). Drops rows
         with no reasoning entry or empty ``event_t0s`` after filtering. Writes aligned
@@ -276,6 +313,12 @@ class PhysicalAIAVDatasetLocalInterface:
                                 io.BytesIO(zf.read(clip_files_in_zip["frame_timestamps"]))
                             )["timestamp"].to_numpy(),
                         )
+                    elif feature == "obstacle.offline":
+                        parquet_key = clip_files_in_zip.get(
+                            "obstacle.offline",
+                            next(iter(clip_files_in_zip.values())),
+                        )
+                        return pd.read_parquet(io.BytesIO(zf.read(parquet_key)))
                     else:
                         logger.warning(
                             f"Feature-specific data reader for {feature=} not implemented yet."
