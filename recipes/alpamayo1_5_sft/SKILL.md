@@ -464,6 +464,10 @@ checkpoint (set `model.checkpoint_path` to the VQA output), then Stage 2.
 
 ## Stage 2 — Action expert (trajectory diffusion)
 
+Stage 2 loads the full base checkpoint first, then applies the Stage-1 VLM
+weights as the final override before freezing the VLM. Constructors do not
+perform Stage-1 checkpoint I/O.
+
 Run this when `$STAGES` is `stage2` or `both` and `$TASK ≠ vqa`. If
 `$STAGES = both`, this fires after Stage 1; if `$STAGES = stage2`, the
 user has provided `$STAGE1_CKPT` as input.

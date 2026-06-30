@@ -178,7 +178,10 @@ torchrun --nproc_per_node 8 -m alpamayo1_5_sft.train_hf \
   model.stage1_vlm_checkpoint_path=/path/to/output_stage1_nav/checkpoint-xxxx
 ```
 
-The Stage-1 checkpoint should be a Trainer output directory containing `model.safetensors.index.json` and its shards.
+The Stage-1 checkpoint should be a Trainer output directory containing
+`model.safetensors.index.json` and its shards. Stage 2 finishes loading the full base
+checkpoint first, then applies the Stage-1 VLM weights as the final override before
+freezing the VLM.
 
 ## Train with LingoQA
 

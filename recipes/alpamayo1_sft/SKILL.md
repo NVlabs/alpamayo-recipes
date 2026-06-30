@@ -465,6 +465,8 @@ Stage 2 ([configs/sft_stage2.yaml](configs/sft_stage2.yaml)) loads the full
 `AlpamayoR1` model via `TrainableAlpamayoR1.from_pretrained`
 ([models/sft_alpamayo_r1.py](models/sft_alpamayo_r1.py)), then **overrides** the
 VLM weights with your Stage-1 output and trains only the trajectory expert.
+The override happens only after Hugging Face has finished loading the full base
+checkpoint; constructors do not perform Stage-1 checkpoint I/O.
 
 DeepSpeed is **off**; gradient checkpointing is **off**;
 `ddp_find_unused_parameters=true` (diffusion expert leaves parts of the graph

@@ -70,6 +70,7 @@ def evaluate(cfg: DictConfig) -> None:
             cfg.model.checkpoint_path = cfg.evaluate.eval_ckpt
         elif issubclass(model_cls, TrainableAlpamayoR1):
             cfg.model.pretrained_model_name_or_path = cfg.evaluate.eval_ckpt
+            cfg.model.stage1_vlm_checkpoint_path = None
         else:
             raise ValueError(f"Unsupported model class: {model_cls}")
     model = hyu.instantiate(cfg.model, _convert_="partial")
