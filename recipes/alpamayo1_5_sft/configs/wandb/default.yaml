@@ -1,6 +1,6 @@
 key: null
-team: ???
-project: ???
+team: usp
+project: wokzone-alpamayo
 group: ${run_name}
 name: ${run_name}
 output_dir: ${paths.output_dir}

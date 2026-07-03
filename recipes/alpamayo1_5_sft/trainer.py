@@ -111,6 +111,12 @@ class ReasoningVLA_Trainer(Trainer):
                 else:
                     lr_mult = lr_multiplier[group_key]
 
+                # lr_multiplier=0.0 means freeze: skip optimizer group and disable gradients
+                if lr_mult == 0.0:
+                    for _, p in params:
+                        p.requires_grad_(False)
+                    continue
+
                 lr = self.args.learning_rate * lr_mult
 
                 # Split into decay and no-decay groups

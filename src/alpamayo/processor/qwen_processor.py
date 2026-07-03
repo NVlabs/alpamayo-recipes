@@ -23,7 +23,7 @@ from transformers import AutoProcessor
 
 from alpamayo.chat_template import get_template
 from alpamayo_r1.models.base_model import SPECIAL_TOKENS, TRAJ_TOKEN
-from alpamayo.utils.get_label_mask import get_label_mask, get_role_eos_mask
+from alpamayo.utils.get_label_mask import get_label_mask, get_role_eos_mask, get_assistant_mask
 
 
 def sort_images_by_camera_ids(
@@ -208,15 +208,27 @@ class QwenProcessor:
                 label_components=label_components,
             )
 
-            # set the mask of assistant's eos token as True
-            eos_mask_assistant = get_role_eos_mask(
-                input_ids=tokenized_data["input_ids"],
-                tokenizer=self.processor.tokenizer,
-                bos_token="<|im_start|>",
-                eos_token="<|im_end|>",
-                role="assistant",
-            )
-            batched_data["labels_mask"] |= eos_mask_assistant
+            # Fallback: if label_components tokens are not in the vocab (e.g. Qwen3-based
+            # backbones that lack <|answer_start|>/<|answer_end|>), supervise the full
+            # assistant response instead of just the EOS token.
+            if not batched_data["labels_mask"].any():
+                B = tokenized_data["input_ids"].shape[0]
+                for b in range(B):
+                    mask = get_assistant_mask(
+                        tokenizer=self.processor.tokenizer,
+                        tokens=tokenized_data["input_ids"][b],
+                    )
+                    batched_data["labels_mask"][b] = mask.to(batched_data["labels_mask"].device)
+            else:
+                # set the mask of assistant's eos token as True
+                eos_mask_assistant = get_role_eos_mask(
+                    input_ids=tokenized_data["input_ids"],
+                    tokenizer=self.processor.tokenizer,
+                    bos_token="<|im_start|>",
+                    eos_token="<|im_end|>",
+                    role="assistant",
+                )
+                batched_data["labels_mask"] |= eos_mask_assistant
         else:
             # in generation mode, we set all labels to be False
             batched_data["labels_mask"] = torch.zeros_like(
