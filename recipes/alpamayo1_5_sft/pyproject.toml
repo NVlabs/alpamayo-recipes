@@ -22,7 +22,7 @@ dependencies = [
   "rich>=14.3.3",
   "wandb>=0.25.0",
   "torchmetrics==1.8.2",
-  "deepspeed==0.18.2",
+  "deepspeed==0.19.1",
 ]
 
 [build-system]
@@ -47,6 +47,7 @@ dev = [
 
 [tool.uv]
 no-build-isolation-package = ["flash-attn"]
+override-dependencies = ["deepspeed==0.19.1"]
 
 [tool.uv.sources]
 alpamayo_r1 = { git = "https://github.com/NVlabs/alpamayo.git" }

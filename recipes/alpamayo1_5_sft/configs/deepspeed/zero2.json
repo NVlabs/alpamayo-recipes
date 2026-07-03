@@ -15,8 +15,5 @@
   "gradient_clipping": "auto",
   "prescale_gradients": false,
   "wall_clock_breakdown": false,
-  "memory_breakdown": false,
-  "comms_logger": {
-    "enabled": false
-  }
+  "memory_breakdown": false
 }
