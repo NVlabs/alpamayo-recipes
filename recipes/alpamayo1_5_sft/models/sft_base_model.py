@@ -97,6 +97,23 @@ def load_alpamayo1_vlm(checkpoint_path: str, model: Any):
                     vlm_state_dict[key] = shard_sd[key]
 
     if not vlm_state_dict:
+        # Fallback: single model.safetensors (non-sharded checkpoint)
+        single_path = checkpoint_dir / "model.safetensors"
+        if single_path.exists():
+            from safetensors import safe_open
+            alias_map: dict[str, str] = {}
+            with safe_open(str(single_path), framework="pt", device="cpu") as f:
+                meta = f.metadata() or {}
+                alias_map = {k: v for k, v in meta.items() if k.startswith("vlm.")}
+                for key in f.keys():
+                    if key.startswith("vlm."):
+                        vlm_state_dict[key] = f.get_tensor(key)
+            # Resolve shared-tensor aliases recorded in safetensors metadata
+            for alias_key, canonical_key in alias_map.items():
+                if alias_key not in vlm_state_dict and canonical_key in vlm_state_dict:
+                    vlm_state_dict[alias_key] = vlm_state_dict[canonical_key].clone()
+
+    if not vlm_state_dict:
         raise ValueError(f"No vlm.* tensors found in checkpoint: {checkpoint_dir}")
 
     load_result = model.load_state_dict(vlm_state_dict, strict=False, assign=True)

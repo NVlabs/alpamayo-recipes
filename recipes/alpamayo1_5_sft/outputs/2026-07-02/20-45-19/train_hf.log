@@ -1,0 +1,138 @@
+[2026-07-02 20:45:22,867][root][INFO] - cc -pthread -fno-strict-overflow -Wsign-compare -Wunreachable-code -DNDEBUG -g -O3 -Wall -O3 -fPIC -fPIC -c /tmp/tmpztsev04y/test.c -o /tmp/tmpztsev04y/test.o
+[2026-07-02 20:45:22,867][root][INFO] - cc -pthread -fno-strict-overflow -Wsign-compare -Wunreachable-code -DNDEBUG -g -O3 -Wall -O3 -fPIC -fPIC -c /tmp/tmpqwk9l16e/test.c -o /tmp/tmpqwk9l16e/test.o
+[2026-07-02 20:45:22,884][root][INFO] - cc -pthread /tmp/tmpqwk9l16e/test.o -laio -o /tmp/tmpqwk9l16e/a.out
+[2026-07-02 20:45:22,884][root][INFO] - cc -pthread /tmp/tmpztsev04y/test.o -laio -o /tmp/tmpztsev04y/a.out
+[2026-07-02 20:45:23,434][root][INFO] - cc -pthread -fno-strict-overflow -Wsign-compare -Wunreachable-code -DNDEBUG -g -O3 -Wall -O3 -fPIC -fPIC -c /tmp/tmpmh__nbk5/test.c -o /tmp/tmpmh__nbk5/test.o
+[2026-07-02 20:45:23,434][root][INFO] - cc -pthread -fno-strict-overflow -Wsign-compare -Wunreachable-code -DNDEBUG -g -O3 -Wall -O3 -fPIC -fPIC -c /tmp/tmpsrwqbguq/test.c -o /tmp/tmpsrwqbguq/test.o
+[2026-07-02 20:45:23,447][root][INFO] - cc -pthread /tmp/tmpsrwqbguq/test.o -L/usr/local/cuda -L/usr/local/cuda/lib64 -lcufile -o /tmp/tmpsrwqbguq/a.out
+[2026-07-02 20:45:23,447][root][INFO] - cc -pthread /tmp/tmpmh__nbk5/test.o -L/usr/local/cuda -L/usr/local/cuda/lib64 -lcufile -o /tmp/tmpmh__nbk5/a.out
+[2026-07-02 20:45:23,476][root][INFO] - cc -pthread -fno-strict-overflow -Wsign-compare -Wunreachable-code -DNDEBUG -g -O3 -Wall -O3 -fPIC -fPIC -c /tmp/tmpk21c_kqm/test.c -o /tmp/tmpk21c_kqm/test.o
+[2026-07-02 20:45:23,477][root][INFO] - cc -pthread -fno-strict-overflow -Wsign-compare -Wunreachable-code -DNDEBUG -g -O3 -Wall -O3 -fPIC -fPIC -c /tmp/tmpsauzuv4k/test.c -o /tmp/tmpsauzuv4k/test.o
+[2026-07-02 20:45:23,488][root][INFO] - cc -pthread /tmp/tmpsauzuv4k/test.o -laio -o /tmp/tmpsauzuv4k/a.out
+[2026-07-02 20:45:23,489][root][INFO] - cc -pthread /tmp/tmpk21c_kqm/test.o -laio -o /tmp/tmpk21c_kqm/a.out
+[2026-07-02 20:45:57,258][train][INFO] - [rank: 0] Configs:
+{
+│   'data': {
+│   │   'train_dataset': {
+│   │   │   'vla_preprocess_args': {
+│   │   │   │   '_target_': 'alpamayo.processor.qwen_processor.get_preprocess_data_fn_from_model_config',
+│   │   │   │   'chat_template_version': 'r1_5',
+│   │   │   │   'components_order': [
+│   │   │   │   │   'image',
+│   │   │   │   │   'question',
+│   │   │   │   │   'answer'
+│   │   │   │   ],
+│   │   │   │   'components_prompt': [
+│   │   │   │   │   'answer'
+│   │   │   │   ],
+│   │   │   │   'label_components': [
+│   │   │   │   │   'answer'
+│   │   │   │   ],
+│   │   │   │   'include_camera_ids': True,
+│   │   │   │   'include_frame_nums': True,
+│   │   │   │   'generation_mode': False
+│   │   │   },
+│   │   │   '_recursive_': False,
+│   │   │   '_target_': 'alpamayo.data.lingoqa.LingoQADataset',
+│   │   │   'local_dir': None,
+│   │   │   'chunk_ids': '0-99',
+│   │   │   'use_default_keyframe': True,
+│   │   │   'data_root': '/data/wesleyferreiramaia/wokzone-alpamayo/data/roadwork/lingoqa_egomix_v3',
+│   │   │   'parquet_name': 'train.parquet'
+│   │   },
+│   │   'val_dataset': {
+│   │   │   'vla_preprocess_args': {
+│   │   │   │   '_target_': 'alpamayo.processor.qwen_processor.get_preprocess_data_fn_from_model_config',
+│   │   │   │   'chat_template_version': 'r1_5',
+│   │   │   │   'components_order': [
+│   │   │   │   │   'image',
+│   │   │   │   │   'question',
+│   │   │   │   │   'answer'
+│   │   │   │   ],
+│   │   │   │   'components_prompt': [
+│   │   │   │   │   'answer'
+│   │   │   │   ],
+│   │   │   │   'label_components': [
+│   │   │   │   │   'answer'
+│   │   │   │   ],
+│   │   │   │   'include_camera_ids': True,
+│   │   │   │   'include_frame_nums': True,
+│   │   │   │   'generation_mode': False
+│   │   │   },
+│   │   │   '_recursive_': False,
+│   │   │   '_target_': 'alpamayo.data.lingoqa.LingoQADataset',
+│   │   │   'local_dir': None,
+│   │   │   'chunk_ids': '99-100',
+│   │   │   'use_default_keyframe': True,
+│   │   │   'data_root': '/data/wesleyferreiramaia/wokzone-alpamayo/data/roadwork/lingoqa_egomix_v3',
+│   │   │   'parquet_name': 'val.parquet'
+│   │   },
+│   │   'collate_fn': {
+│   │   │   '_target_': 'alpamayo.processor.qwen_processor.collate_fn_from_model_config',
+│   │   │   '_partial_': True,
+│   │   │   'chat_template_version': 'r1_5'
+│   │   }
+│   },
+│   'paths': {
+│   │   'output_dir': '/data/wesleyferreiramaia/wokzone-alpamayo/checkpoints/sft_stage6_general'
+│   },
+│   'callbacks': {},
+│   'evaluate': {
+│   │   'max_eval_steps': -1,
+│   │   'torch_dtype': 'bfloat16',
+│   │   'metric_runner': None
+│   },
+│   'trainer': {
+│   │   'output_dir': '/data/wesleyferreiramaia/wokzone-alpamayo/checkpoints/sft_stage6_general',
+│   │   'per_device_train_batch_size': 2,
+│   │   'per_device_eval_batch_size': 2,
+│   │   'gradient_accumulation_steps': 4,
+│   │   'learning_rate': 1.5e-05,
+│   │   'warmup_steps': 100,
+│   │   'logging_steps': 10,
+│   │   'save_steps': 400,
+│   │   'save_total_limit': 3,
+│   │   'num_train_epochs': 2,
+│   │   'bf16': True,
+│   │   'dataloader_pin_memory': True,
+│   │   'dataloader_num_workers': 4,
+│   │   'remove_unused_columns': False,
+│   │   'report_to': 'none',
+│   │   'lr_scheduler_type': 'cosine_warmup_with_min_lr',
+│   │   'lr_scheduler_kwargs': {
+│   │   │   'min_lr': 2e-06
+│   │   },
+│   │   'deepspeed': 'configs/deepspeed/zero2_fast.json',
+│   │   'gradient_checkpointing': True,
+│   │   'gradient_checkpointing_kwargs': {
+│   │   │   'use_reentrant': False
+│   │   },
+│   │   'lr_multiplier': {
+│   │   │   'vlm.model.visual': 0.1,
+│   │   │   'vlm.model.language_model.embed_tokens': 0.0,
+│   │   │   'expert': 0.0
+│   │   },
+│   │   'eval_strategy': 'no',
+│   │   'load_best_model_at_end': False,
+│   │   'ddp_find_unused_parameters': False
+│   },
+│   'task_name': 'alpamayo_stage6_general',
+│   'run_name': 'alpamayo_stage6_general_20260702_204557',
+│   'model': {
+│   │   '_target_': 'alpamayo1_5_sft.models.sft_base_model.TrainableReasoningVLA.from_alpamayo_checkpoint',
+│   │   'checkpoint_path': '/data/wesleyferreiramaia/wokzone-alpamayo/checkpoints/sft_stage5_1_signs/checkpoint-2472',
+│   │   'vlm_name_or_path': '/data/wesleyferreiramaia/wokzone-alpamayo/models/Cosmos-Reason2-2B'
+│   }
+}
+
+[2026-07-02 20:46:44,271][alpamayo_r1.models.base_model][INFO] - Total parameters: 2,135,234,560
+[2026-07-02 20:46:44,272][alpamayo_r1.models.base_model][INFO] - Trainable parameters: 2,135,234,560
+[2026-07-02 20:46:44,341][alpamayo_r1.models.base_model][INFO] - Total parameters: 2,135,234,560
+[2026-07-02 20:46:44,341][alpamayo_r1.models.base_model][INFO] - Trainable parameters: 2,135,234,560
+[2026-07-02 20:46:48,072][alpamayo1_5_sft.models.sft_base_model][INFO] - [rank: 0] Loaded 626 VLM tensors from /data/wesleyferreiramaia/wokzone-alpamayo/checkpoints/sft_stage5_1_signs/checkpoint-2472 (missing=0, unexpected=0)
+[2026-07-02 20:46:48,108][alpamayo.data.lingoqa][INFO] - [rank: 1] Loaded LingoQA parquet from /data/wesleyferreiramaia/wokzone-alpamayo/data/roadwork/lingoqa_egomix_v3/train.parquet  (17537 QA pairs, 10403 segments)
+[2026-07-02 20:46:48,108][alpamayo.data.lingoqa][INFO] - [rank: 0] Loaded LingoQA parquet from /data/wesleyferreiramaia/wokzone-alpamayo/data/roadwork/lingoqa_egomix_v3/train.parquet  (17537 QA pairs, 10403 segments)
+[2026-07-02 20:46:48,615][alpamayo.data.lingoqa][INFO] - [rank: 0] Loaded LingoQA parquet from /data/wesleyferreiramaia/wokzone-alpamayo/data/roadwork/lingoqa_egomix_v3/val.parquet  (1445 QA pairs, 1413 segments)
+[2026-07-02 20:46:48,619][alpamayo.data.lingoqa][INFO] - [rank: 1] Loaded LingoQA parquet from /data/wesleyferreiramaia/wokzone-alpamayo/data/roadwork/lingoqa_egomix_v3/val.parquet  (1445 QA pairs, 1413 segments)
+[2026-07-02 20:46:49,142][alpamayo.common.config_utils][INFO] - [rank: 0] Config saved to /data/wesleyferreiramaia/wokzone-alpamayo/checkpoints/sft_stage6_general/config.yaml
+[2026-07-02 20:46:49,396][accelerate.accelerator][WARNING] - [RANK 0] Gradient accumulation steps mismatch: GradientAccumulationPlugin has 1, DeepSpeed config has 4. Using DeepSpeed's value.

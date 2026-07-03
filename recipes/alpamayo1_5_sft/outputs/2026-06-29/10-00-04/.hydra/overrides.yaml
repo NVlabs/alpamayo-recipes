@@ -1,0 +1,6 @@
+- trainer.max_steps=20
+- trainer.eval_steps=20
+- trainer.save_steps=20
+- trainer.logging_steps=1
+- trainer.gradient_accumulation_steps=1
+- trainer.num_train_epochs=1

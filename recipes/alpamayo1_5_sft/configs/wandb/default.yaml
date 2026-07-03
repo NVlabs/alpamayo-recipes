@@ -1,6 +1,1 @@
-key: null
-team: usp
-project: wokzone-alpamayo
-group: ${run_name}
-name: ${run_name}
-output_dir: ${paths.output_dir}
+/data/wesleyferreiramaia/wokzone-alpamayo/mi3lab-workzone-vla/configs/wandb/default.yaml

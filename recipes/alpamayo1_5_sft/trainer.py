@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+import time
+import logging as _logging
 from typing import Optional
 from dataclasses import dataclass, field
 
@@ -20,6 +23,8 @@ import torch
 from transformers import Trainer
 from transformers.utils import is_sagemaker_mp_enabled
 from transformers import TrainingArguments as HFTrainingArguments
+
+_logger = _logging.getLogger(__name__)
 
 """Custom TrainingArguments for Alpamayo training."""
 
@@ -156,3 +161,19 @@ class ReasoningVLA_Trainer(Trainer):
                 self.optimizer = smp.DistributedOptimizer(self.optimizer)
 
         return self.optimizer
+
+    def _save_optimizer_and_scheduler(self, output_dir):
+        """Override to retry on NFS errors after large optimizer.pt write."""
+        for attempt in range(3):
+            try:
+                super()._save_optimizer_and_scheduler(output_dir)
+                return
+            except RuntimeError as e:
+                if attempt < 2 and "cannot be opened" in str(e):
+                    _logger.warning(
+                        f"NFS write failed (attempt {attempt+1}/3): {e}. "
+                        f"Waiting 30s before retry..."
+                    )
+                    time.sleep(30)
+                else:
+                    raise

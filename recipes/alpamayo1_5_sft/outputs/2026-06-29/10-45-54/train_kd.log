@@ -1,0 +1,230 @@
+[2026-06-29 10:45:54,498][train_kd][INFO] - [rank: 0] Config:
+{
+│   'data': {
+│   │   'train_dataset': {
+│   │   │   'vla_preprocess_args': {
+│   │   │   │   '_target_': 'alpamayo.processor.qwen_processor.get_preprocess_data_fn_from_model_config',
+│   │   │   │   'chat_template_version': 'r1_5',
+│   │   │   │   'components_order': [
+│   │   │   │   │   'image',
+│   │   │   │   │   'question',
+│   │   │   │   │   'answer'
+│   │   │   │   ],
+│   │   │   │   'components_prompt': [
+│   │   │   │   │   'answer'
+│   │   │   │   ],
+│   │   │   │   'label_components': [
+│   │   │   │   │   'answer'
+│   │   │   │   ],
+│   │   │   │   'include_camera_ids': True,
+│   │   │   │   'include_frame_nums': True,
+│   │   │   │   'generation_mode': False
+│   │   │   },
+│   │   │   '_recursive_': False,
+│   │   │   '_target_': 'alpamayo.data.lingoqa.LingoQADataset',
+│   │   │   'local_dir': None,
+│   │   │   'chunk_ids': '0-99',
+│   │   │   'use_default_keyframe': True,
+│   │   │   'data_root': '/data/wesleyferreiramaia/wokzone-alpamayo/data/roadwork/lingoqa_pathways',
+│   │   │   'parquet_name': 'train.parquet'
+│   │   },
+│   │   'val_dataset': {
+│   │   │   'vla_preprocess_args': {
+│   │   │   │   '_target_': 'alpamayo.processor.qwen_processor.get_preprocess_data_fn_from_model_config',
+│   │   │   │   'chat_template_version': 'r1_5',
+│   │   │   │   'components_order': [
+│   │   │   │   │   'image',
+│   │   │   │   │   'question',
+│   │   │   │   │   'answer'
+│   │   │   │   ],
+│   │   │   │   'components_prompt': [
+│   │   │   │   │   'answer'
+│   │   │   │   ],
+│   │   │   │   'label_components': [
+│   │   │   │   │   'answer'
+│   │   │   │   ],
+│   │   │   │   'include_camera_ids': True,
+│   │   │   │   'include_frame_nums': True,
+│   │   │   │   'generation_mode': False
+│   │   │   },
+│   │   │   '_recursive_': False,
+│   │   │   '_target_': 'alpamayo.data.lingoqa.LingoQADataset',
+│   │   │   'local_dir': None,
+│   │   │   'chunk_ids': '99-100',
+│   │   │   'use_default_keyframe': True,
+│   │   │   'data_root': '/data/wesleyferreiramaia/wokzone-alpamayo/data/roadwork/lingoqa_pathways',
+│   │   │   'parquet_name': 'val.parquet'
+│   │   },
+│   │   'collate_fn': {
+│   │   │   '_target_': 'alpamayo.processor.qwen_processor.collate_fn_from_model_config',
+│   │   │   '_partial_': True,
+│   │   │   'chat_template_version': 'r1_5'
+│   │   }
+│   },
+│   'paths': {
+│   │   'output_dir': '/data/wesleyferreiramaia/wokzone-alpamayo/checkpoints/kd_stage3_roadwork'
+│   },
+│   'callbacks': {},
+│   'evaluate': {
+│   │   'max_eval_steps': -1,
+│   │   'torch_dtype': 'bfloat16',
+│   │   'metric_runner': None
+│   },
+│   'trainer': {
+│   │   'output_dir': '/data/wesleyferreiramaia/wokzone-alpamayo/checkpoints/kd_stage3_roadwork',
+│   │   'per_device_train_batch_size': 1,
+│   │   'per_device_eval_batch_size': 1,
+│   │   'gradient_accumulation_steps': 4,
+│   │   'learning_rate': 2e-05,
+│   │   'warmup_steps': 100,
+│   │   'logging_steps': 10,
+│   │   'save_steps': 500,
+│   │   'save_total_limit': 3,
+│   │   'num_train_epochs': 4,
+│   │   'bf16': True,
+│   │   'dataloader_pin_memory': True,
+│   │   'dataloader_num_workers': 4,
+│   │   'remove_unused_columns': False,
+│   │   'report_to': 'none',
+│   │   'lr_scheduler_type': 'cosine_warmup_with_min_lr',
+│   │   'lr_scheduler_kwargs': {
+│   │   │   'min_lr': 1e-06
+│   │   },
+│   │   'deepspeed': None,
+│   │   'gradient_checkpointing': True,
+│   │   'gradient_checkpointing_kwargs': {
+│   │   │   'use_reentrant': False
+│   │   },
+│   │   'lr_multiplier': {
+│   │   │   'vlm.model.visual': 0.1,
+│   │   │   'expert': 0.0
+│   │   },
+│   │   'kd_lambda': 0.5,
+│   │   'kd_temperature': 0.7,
+│   │   'max_steps': -1,
+│   │   'eval_steps': 500,
+│   │   'eval_strategy': 'steps',
+│   │   'load_best_model_at_end': True,
+│   │   'metric_for_best_model': 'eval_loss',
+│   │   'greater_is_better': False,
+│   │   'ddp_find_unused_parameters': False
+│   },
+│   'task_name': 'alpamayo_stage3_kd_roadwork',
+│   'run_name': 'alpamayo_stage3_kd_roadwork_20260629_104554',
+│   'kd': {
+│   │   'teacher_checkpoint': '/data/wesleyferreiramaia/wokzone-alpamayo/checkpoints/sft_stage1_roadwork_v2/checkpoint-4500',
+│   │   'teacher_vlm_path': '/data/wesleyferreiramaia/wokzone-alpamayo/models/Cosmos-Reason2-8B',
+│   │   'alpamayo_base_path': '/data/wesleyferreiramaia/wokzone-alpamayo/models/Alpamayo-1.5-10B-A1-format',
+│   │   'student_vlm_path': '/data/wesleyferreiramaia/wokzone-alpamayo/models/Cosmos-Reason2-2B'
+│   }
+}
+
+[2026-06-29 10:48:54,203][alpamayo_r1.models.base_model][INFO] - Total parameters: 8,797,933,808
+[2026-06-29 10:48:54,204][alpamayo_r1.models.base_model][INFO] - Trainable parameters: 8,797,933,808
+[2026-06-29 10:48:54,209][alpamayo_r1.models.base_model][INFO] - Total parameters: 8,797,933,808
+[2026-06-29 10:48:54,209][alpamayo_r1.models.base_model][INFO] - Trainable parameters: 8,797,933,808
+[2026-06-29 10:48:54,899][alpamayo1_5_sft.models.sft_base_model][INFO] - [rank: 0] Loaded 750 VLM tensors from /data/wesleyferreiramaia/wokzone-alpamayo/checkpoints/sft_stage1_roadwork_v2/checkpoint-4500 (missing=0, unexpected=0)
+[2026-06-29 10:48:54,903][train_kd][INFO] - [rank: 0] Teacher loaded from /data/wesleyferreiramaia/wokzone-alpamayo/checkpoints/sft_stage1_roadwork_v2/checkpoint-4500 (frozen)
+[2026-06-29 10:48:55,460][alpamayo1_5_sft.models.kd_model][INFO] - [rank: 0] Building student model with VLM: /data/wesleyferreiramaia/wokzone-alpamayo/models/Cosmos-Reason2-2B
+[2026-06-29 10:49:40,479][alpamayo_r1.models.base_model][INFO] - Total parameters: 2,135,234,560
+[2026-06-29 10:49:40,480][alpamayo_r1.models.base_model][INFO] - Trainable parameters: 2,135,234,560
+[2026-06-29 10:49:40,480][alpamayo1_5_sft.models.kd_model][INFO] - [rank: 0] Student model built — starting from Cosmos-Reason2-2B pretrained weights
+[2026-06-29 10:49:40,482][alpamayo_r1.models.base_model][INFO] - Total parameters: 2,135,234,560
+[2026-06-29 10:49:40,483][alpamayo_r1.models.base_model][INFO] - Trainable parameters: 2,135,234,560
+[2026-06-29 10:49:40,502][alpamayo.data.lingoqa][INFO] - [rank: 1] Loaded LingoQA parquet from /data/wesleyferreiramaia/wokzone-alpamayo/data/roadwork/lingoqa_pathways/train.parquet  (9124 QA pairs, 3117 segments)
+[2026-06-29 10:49:40,502][alpamayo.data.lingoqa][INFO] - [rank: 0] Loaded LingoQA parquet from /data/wesleyferreiramaia/wokzone-alpamayo/data/roadwork/lingoqa_pathways/train.parquet  (9124 QA pairs, 3117 segments)
+[2026-06-29 10:49:41,008][alpamayo.data.lingoqa][INFO] - [rank: 0] Loaded LingoQA parquet from /data/wesleyferreiramaia/wokzone-alpamayo/data/roadwork/lingoqa_pathways/val.parquet  (6721 QA pairs, 2313 segments)
+[2026-06-29 10:49:41,009][alpamayo.data.lingoqa][INFO] - [rank: 1] Loaded LingoQA parquet from /data/wesleyferreiramaia/wokzone-alpamayo/data/roadwork/lingoqa_pathways/val.parquet  (6721 QA pairs, 2313 segments)
+[2026-06-29 10:49:42,304][root][INFO] - cc -pthread -fno-strict-overflow -Wsign-compare -Wunreachable-code -DNDEBUG -g -O3 -Wall -O3 -fPIC -fPIC -c /tmp/tmpbe5xr4tv/test.c -o /tmp/tmpbe5xr4tv/test.o
+[2026-06-29 10:49:42,304][root][INFO] - cc -pthread -fno-strict-overflow -Wsign-compare -Wunreachable-code -DNDEBUG -g -O3 -Wall -O3 -fPIC -fPIC -c /tmp/tmp5e45f0gp/test.c -o /tmp/tmp5e45f0gp/test.o
+[2026-06-29 10:49:42,319][root][INFO] - cc -pthread /tmp/tmpbe5xr4tv/test.o -laio -o /tmp/tmpbe5xr4tv/a.out
+[2026-06-29 10:49:42,319][root][INFO] - cc -pthread /tmp/tmp5e45f0gp/test.o -laio -o /tmp/tmp5e45f0gp/a.out
+[2026-06-29 10:49:42,665][root][INFO] - cc -pthread -fno-strict-overflow -Wsign-compare -Wunreachable-code -DNDEBUG -g -O3 -Wall -O3 -fPIC -fPIC -c /tmp/tmpelooc2__/test.c -o /tmp/tmpelooc2__/test.o
+[2026-06-29 10:49:42,668][root][INFO] - cc -pthread -fno-strict-overflow -Wsign-compare -Wunreachable-code -DNDEBUG -g -O3 -Wall -O3 -fPIC -fPIC -c /tmp/tmptkjzps6v/test.c -o /tmp/tmptkjzps6v/test.o
+[2026-06-29 10:49:42,679][root][INFO] - cc -pthread /tmp/tmpelooc2__/test.o -L/usr/local/cuda -L/usr/local/cuda/lib64 -lcufile -o /tmp/tmpelooc2__/a.out
+[2026-06-29 10:49:42,681][root][INFO] - cc -pthread /tmp/tmptkjzps6v/test.o -L/usr/local/cuda -L/usr/local/cuda/lib64 -lcufile -o /tmp/tmptkjzps6v/a.out
+[2026-06-29 10:49:42,708][root][INFO] - cc -pthread -fno-strict-overflow -Wsign-compare -Wunreachable-code -DNDEBUG -g -O3 -Wall -O3 -fPIC -fPIC -c /tmp/tmpd3k9pazz/test.c -o /tmp/tmpd3k9pazz/test.o
+[2026-06-29 10:49:42,710][root][INFO] - cc -pthread -fno-strict-overflow -Wsign-compare -Wunreachable-code -DNDEBUG -g -O3 -Wall -O3 -fPIC -fPIC -c /tmp/tmp690o_m5t/test.c -o /tmp/tmp690o_m5t/test.o
+[2026-06-29 10:49:42,720][root][INFO] - cc -pthread /tmp/tmpd3k9pazz/test.o -laio -o /tmp/tmpd3k9pazz/a.out
+[2026-06-29 10:49:42,722][root][INFO] - cc -pthread /tmp/tmp690o_m5t/test.o -laio -o /tmp/tmp690o_m5t/a.out
+[2026-06-29 10:49:44,586][train_kd][INFO] - [rank: 0] Resuming from checkpoint: /data/wesleyferreiramaia/wokzone-alpamayo/checkpoints/kd_stage3_roadwork/checkpoint-20
+[2026-06-29 10:50:26,271][alpamayo1_5_sft.trainer_kd][INFO] - step=20 loss=508.6081 loss_sft=12.0788 loss_kd=1005.1373
+[2026-06-29 10:50:26,315][alpamayo1_5_sft.trainer_kd][INFO] - step=20 loss=460.6138 loss_sft=11.8145 loss_kd=909.4131
+[2026-06-29 10:50:26,650][alpamayo1_5_sft.trainer_kd][INFO] - step=20 loss=473.4501 loss_sft=12.0659 loss_kd=934.8343
+[2026-06-29 10:50:26,713][alpamayo1_5_sft.trainer_kd][INFO] - step=20 loss=558.7747 loss_sft=12.0155 loss_kd=1105.5339
+[2026-06-29 10:50:26,918][alpamayo1_5_sft.trainer_kd][INFO] - step=20 loss=389.6765 loss_sft=11.7621 loss_kd=767.5909
+[2026-06-29 10:50:26,988][alpamayo1_5_sft.trainer_kd][INFO] - step=20 loss=487.2129 loss_sft=11.9468 loss_kd=962.4790
+[2026-06-29 10:50:27,191][alpamayo1_5_sft.trainer_kd][INFO] - step=20 loss=455.5501 loss_sft=11.9488 loss_kd=899.1514
+[2026-06-29 10:50:27,259][alpamayo1_5_sft.trainer_kd][INFO] - step=20 loss=465.2412 loss_sft=11.9923 loss_kd=918.4901
+[2026-06-29 10:50:42,428][alpamayo1_5_sft.trainer_kd][INFO] - step=30 loss=401.2285 loss_sft=11.1164 loss_kd=791.3406
+[2026-06-29 10:50:42,432][alpamayo1_5_sft.trainer_kd][INFO] - step=30 loss=549.4590 loss_sft=11.8884 loss_kd=1087.0297
+[2026-06-29 10:50:42,714][alpamayo1_5_sft.trainer_kd][INFO] - step=30 loss=385.4686 loss_sft=11.0844 loss_kd=759.8528
+[2026-06-29 10:50:42,720][alpamayo1_5_sft.trainer_kd][INFO] - step=30 loss=446.5405 loss_sft=11.0929 loss_kd=881.9880
+[2026-06-29 10:50:43,008][alpamayo1_5_sft.trainer_kd][INFO] - step=30 loss=358.2807 loss_sft=10.9581 loss_kd=705.6033
+[2026-06-29 10:50:43,008][alpamayo1_5_sft.trainer_kd][INFO] - step=30 loss=414.7123 loss_sft=11.4904 loss_kd=817.9341
+[2026-06-29 10:50:43,298][alpamayo1_5_sft.trainer_kd][INFO] - step=30 loss=406.3337 loss_sft=11.1592 loss_kd=801.5082
+[2026-06-29 10:50:43,298][alpamayo1_5_sft.trainer_kd][INFO] - step=30 loss=414.3571 loss_sft=11.2571 loss_kd=817.4572
+[2026-06-29 11:02:17,088][alpamayo1_5_sft.trainer_kd][INFO] - step=40 loss=317.0813 loss_sft=10.8629 loss_kd=623.2997
+[2026-06-29 11:02:17,090][alpamayo1_5_sft.trainer_kd][INFO] - step=40 loss=402.0038 loss_sft=10.3179 loss_kd=793.6897
+[2026-06-29 11:02:17,371][alpamayo1_5_sft.trainer_kd][INFO] - step=40 loss=352.6530 loss_sft=10.4163 loss_kd=694.8896
+[2026-06-29 11:02:17,375][alpamayo1_5_sft.trainer_kd][INFO] - step=40 loss=578.6052 loss_sft=10.7732 loss_kd=1146.4371
+[2026-06-29 11:02:17,654][alpamayo1_5_sft.trainer_kd][INFO] - step=40 loss=310.4438 loss_sft=9.4156 loss_kd=611.4719
+[2026-06-29 11:02:17,662][alpamayo1_5_sft.trainer_kd][INFO] - step=40 loss=341.8743 loss_sft=9.6248 loss_kd=674.1237
+[2026-06-29 11:02:17,935][alpamayo1_5_sft.trainer_kd][INFO] - step=40 loss=387.7145 loss_sft=10.6679 loss_kd=764.7612
+[2026-06-29 11:02:17,940][alpamayo1_5_sft.trainer_kd][INFO] - step=40 loss=327.3770 loss_sft=9.5573 loss_kd=645.1968
+[2026-06-29 11:02:32,602][alpamayo1_5_sft.trainer_kd][INFO] - step=50 loss=292.4474 loss_sft=8.2222 loss_kd=576.6726
+[2026-06-29 11:02:32,608][alpamayo1_5_sft.trainer_kd][INFO] - step=50 loss=324.7036 loss_sft=9.4026 loss_kd=640.0046
+[2026-06-29 11:02:32,893][alpamayo1_5_sft.trainer_kd][INFO] - step=50 loss=305.3549 loss_sft=8.8252 loss_kd=601.8846
+[2026-06-29 11:02:33,186][alpamayo1_5_sft.trainer_kd][INFO] - step=50 loss=318.8284 loss_sft=9.3807 loss_kd=628.2761
+[2026-06-29 11:02:33,204][alpamayo1_5_sft.trainer_kd][INFO] - step=50 loss=288.9656 loss_sft=8.5353 loss_kd=569.3959
+[2026-06-29 11:02:33,470][alpamayo1_5_sft.trainer_kd][INFO] - step=50 loss=293.2183 loss_sft=9.8215 loss_kd=576.6151
+[2026-06-29 11:02:33,489][alpamayo1_5_sft.trainer_kd][INFO] - step=50 loss=317.6392 loss_sft=9.8286 loss_kd=625.4498
+[2026-06-29 11:02:33,761][alpamayo1_5_sft.trainer_kd][INFO] - step=50 loss=319.3354 loss_sft=8.5183 loss_kd=630.1526
+[2026-06-29 11:12:57,854][alpamayo1_5_sft.trainer_kd][INFO] - step=60 loss=270.8468 loss_sft=8.4699 loss_kd=533.2238
+[2026-06-29 11:12:58,138][alpamayo1_5_sft.trainer_kd][INFO] - step=60 loss=337.2690 loss_sft=7.9443 loss_kd=666.5938
+[2026-06-29 11:12:58,179][alpamayo1_5_sft.trainer_kd][INFO] - step=60 loss=232.7497 loss_sft=6.5760 loss_kd=458.9233
+[2026-06-29 11:12:58,424][alpamayo1_5_sft.trainer_kd][INFO] - step=60 loss=257.4904 loss_sft=7.6512 loss_kd=507.3296
+[2026-06-29 11:12:58,452][alpamayo1_5_sft.trainer_kd][INFO] - step=60 loss=208.5436 loss_sft=6.9606 loss_kd=410.1266
+[2026-06-29 11:12:58,698][alpamayo1_5_sft.trainer_kd][INFO] - step=60 loss=238.1448 loss_sft=7.0222 loss_kd=469.2674
+[2026-06-29 11:12:58,733][alpamayo1_5_sft.trainer_kd][INFO] - step=60 loss=304.1686 loss_sft=7.6227 loss_kd=600.7145
+[2026-06-29 11:12:59,005][alpamayo1_5_sft.trainer_kd][INFO] - step=60 loss=295.9343 loss_sft=7.3228 loss_kd=584.5458
+[2026-06-29 11:13:13,824][alpamayo1_5_sft.trainer_kd][INFO] - step=70 loss=210.4303 loss_sft=6.7191 loss_kd=414.1415
+[2026-06-29 11:13:13,830][alpamayo1_5_sft.trainer_kd][INFO] - step=70 loss=240.5729 loss_sft=7.8512 loss_kd=473.2946
+[2026-06-29 11:13:14,100][alpamayo1_5_sft.trainer_kd][INFO] - step=70 loss=231.3835 loss_sft=6.0183 loss_kd=456.7487
+[2026-06-29 11:13:14,102][alpamayo1_5_sft.trainer_kd][INFO] - step=70 loss=196.1865 loss_sft=6.3783 loss_kd=385.9946
+[2026-06-29 11:13:14,389][alpamayo1_5_sft.trainer_kd][INFO] - step=70 loss=262.7254 loss_sft=6.1885 loss_kd=519.2623
+[2026-06-29 11:13:14,670][alpamayo1_5_sft.trainer_kd][INFO] - step=70 loss=206.9167 loss_sft=5.2190 loss_kd=408.6144
+[2026-06-29 11:13:14,687][alpamayo1_5_sft.trainer_kd][INFO] - step=70 loss=228.5506 loss_sft=6.0222 loss_kd=451.0789
+[2026-06-29 11:13:14,961][alpamayo1_5_sft.trainer_kd][INFO] - step=70 loss=221.9470 loss_sft=6.1179 loss_kd=437.7761
+[2026-06-29 11:23:02,828][alpamayo1_5_sft.trainer_kd][INFO] - step=80 loss=161.2289 loss_sft=3.6168 loss_kd=318.8409
+[2026-06-29 11:23:03,108][alpamayo1_5_sft.trainer_kd][INFO] - step=80 loss=180.8008 loss_sft=3.6390 loss_kd=357.9627
+[2026-06-29 11:23:03,135][alpamayo1_5_sft.trainer_kd][INFO] - step=80 loss=230.1399 loss_sft=4.9978 loss_kd=455.2820
+[2026-06-29 11:23:03,394][alpamayo1_5_sft.trainer_kd][INFO] - step=80 loss=208.1115 loss_sft=4.5538 loss_kd=411.6692
+[2026-06-29 11:23:03,413][alpamayo1_5_sft.trainer_kd][INFO] - step=80 loss=208.0618 loss_sft=4.7020 loss_kd=411.4216
+[2026-06-29 11:23:03,673][alpamayo1_5_sft.trainer_kd][INFO] - step=80 loss=168.4403 loss_sft=3.7060 loss_kd=333.1746
+[2026-06-29 11:23:03,691][alpamayo1_5_sft.trainer_kd][INFO] - step=80 loss=185.6814 loss_sft=3.9427 loss_kd=367.4201
+[2026-06-29 11:23:03,961][alpamayo1_5_sft.trainer_kd][INFO] - step=80 loss=176.7107 loss_sft=3.6667 loss_kd=349.7548
+[2026-06-29 11:23:18,476][alpamayo1_5_sft.trainer_kd][INFO] - step=90 loss=153.2494 loss_sft=1.6935 loss_kd=304.8053
+[2026-06-29 11:23:18,477][alpamayo1_5_sft.trainer_kd][INFO] - step=90 loss=179.2641 loss_sft=3.7378 loss_kd=354.7904
+[2026-06-29 11:23:18,754][alpamayo1_5_sft.trainer_kd][INFO] - step=90 loss=185.2487 loss_sft=3.8948 loss_kd=366.6026
+[2026-06-29 11:23:19,022][alpamayo1_5_sft.trainer_kd][INFO] - step=90 loss=155.9560 loss_sft=1.7935 loss_kd=310.1185
+[2026-06-29 11:23:19,038][alpamayo1_5_sft.trainer_kd][INFO] - step=90 loss=154.2815 loss_sft=1.8768 loss_kd=306.6862
+[2026-06-29 11:23:19,308][alpamayo1_5_sft.trainer_kd][INFO] - step=90 loss=178.9680 loss_sft=3.4956 loss_kd=354.4404
+[2026-06-29 11:23:19,319][alpamayo1_5_sft.trainer_kd][INFO] - step=90 loss=174.3593 loss_sft=3.0868 loss_kd=345.6318
+[2026-06-29 11:23:19,573][alpamayo1_5_sft.trainer_kd][INFO] - step=90 loss=152.2257 loss_sft=3.8775 loss_kd=300.5739
+[2026-06-29 11:33:10,001][alpamayo1_5_sft.trainer_kd][INFO] - step=100 loss=137.9434 loss_sft=3.1159 loss_kd=272.7709
+[2026-06-29 11:33:10,007][alpamayo1_5_sft.trainer_kd][INFO] - step=100 loss=146.1638 loss_sft=2.3501 loss_kd=289.9775
+[2026-06-29 11:33:10,279][alpamayo1_5_sft.trainer_kd][INFO] - step=100 loss=148.4949 loss_sft=1.7578 loss_kd=295.2320
+[2026-06-29 11:33:10,287][alpamayo1_5_sft.trainer_kd][INFO] - step=100 loss=161.2437 loss_sft=3.2136 loss_kd=319.2738
+[2026-06-29 11:33:10,554][alpamayo1_5_sft.trainer_kd][INFO] - step=100 loss=144.0610 loss_sft=4.5541 loss_kd=283.5679
+[2026-06-29 11:33:10,569][alpamayo1_5_sft.trainer_kd][INFO] - step=100 loss=174.6108 loss_sft=7.2173 loss_kd=342.0043
+[2026-06-29 11:33:10,834][alpamayo1_5_sft.trainer_kd][INFO] - step=100 loss=144.5556 loss_sft=3.1356 loss_kd=285.9756
+[2026-06-29 11:33:10,846][alpamayo1_5_sft.trainer_kd][INFO] - step=100 loss=158.3484 loss_sft=2.9833 loss_kd=313.7136
+[2026-06-29 11:33:25,582][alpamayo1_5_sft.trainer_kd][INFO] - step=110 loss=117.6632 loss_sft=1.3509 loss_kd=233.9755
+[2026-06-29 11:33:25,583][alpamayo1_5_sft.trainer_kd][INFO] - step=110 loss=135.5071 loss_sft=2.4105 loss_kd=268.6037
+[2026-06-29 11:33:25,851][alpamayo1_5_sft.trainer_kd][INFO] - step=110 loss=145.6528 loss_sft=5.0892 loss_kd=286.2165
+[2026-06-29 11:33:25,859][alpamayo1_5_sft.trainer_kd][INFO] - step=110 loss=128.8823 loss_sft=1.3949 loss_kd=256.3697
+[2026-06-29 11:33:26,134][alpamayo1_5_sft.trainer_kd][INFO] - step=110 loss=123.1022 loss_sft=2.0815 loss_kd=244.1229
+[2026-06-29 11:33:26,374][alpamayo1_5_sft.trainer_kd][INFO] - step=110 loss=139.8688 loss_sft=2.1610 loss_kd=277.5766
+[2026-06-29 11:33:26,413][alpamayo1_5_sft.trainer_kd][INFO] - step=110 loss=120.3373 loss_sft=1.3825 loss_kd=239.2921
+[2026-06-29 11:33:26,640][alpamayo1_5_sft.trainer_kd][INFO] - step=110 loss=143.7186 loss_sft=3.9766 loss_kd=283.4607

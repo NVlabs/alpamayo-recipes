@@ -1,0 +1,4 @@
+- trainer.save_steps=100
+- trainer.num_train_epochs=1
+- trainer.logging_steps=5
+- paths.output_dir=/data/wesleyferreiramaia/wokzone-alpamayo/checkpoints/sft_stage4_v4_test

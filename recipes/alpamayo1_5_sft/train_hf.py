@@ -18,6 +18,7 @@ import hydra
 import hydra.utils as hyu
 import torch
 from omegaconf import DictConfig, OmegaConf
+from transformers.trainer_utils import get_last_checkpoint
 
 from alpamayo_r1.common import logging
 from alpamayo.common import misc
@@ -87,7 +88,11 @@ def train(cfg: DictConfig) -> None:
             include_hydra_config=True,
         )
 
-    trainer.train()
+    # Auto-resume from last checkpoint in output_dir if it exists
+    last_checkpoint = get_last_checkpoint(cfg.paths.output_dir)
+    if last_checkpoint is not None:
+        logger.info(f"Resuming from checkpoint: {last_checkpoint}")
+    trainer.train(resume_from_checkpoint=last_checkpoint)
     if torch.distributed.is_initialized():
         torch.distributed.destroy_process_group()
 
