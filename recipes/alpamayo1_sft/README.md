@@ -196,6 +196,8 @@ torchrun --nproc_per_node 8 \
 `model.pretrained_model_name_or_path` must be the same local folder used for Stage 1.
 `model.stage1_vlm_checkpoint_path` is your Stage 1 Trainer output directory, e.g.
 `output_stage1/checkpoint-3500` (contains `model.safetensors.index.json` and shards).
+Stage 2 finishes loading the full base checkpoint first, then applies these Stage-1 VLM
+weights as the final override before freezing the VLM.
 
 Loss curve:
 
