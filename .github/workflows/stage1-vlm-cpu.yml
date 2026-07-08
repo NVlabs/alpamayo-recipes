@@ -1,0 +1,131 @@
+name: Stage-1 VLM CPU
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/**"
+      - ".github/requirements/stage1-vlm-cpu.in"
+      - ".github/requirements/pylock.stage1-vlm-cpu.toml"
+      - "recipes/alpamayo1_sft/**"
+      - "recipes/alpamayo1_5_sft/**"
+      - "src/alpamayo/**"
+      - "tests/test_ci_baseline.py"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/**"
+      - ".github/requirements/stage1-vlm-cpu.in"
+      - ".github/requirements/pylock.stage1-vlm-cpu.toml"
+      - "recipes/alpamayo1_sft/**"
+      - "recipes/alpamayo1_5_sft/**"
+      - "src/alpamayo/**"
+      - "tests/test_ci_baseline.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage1-vlm-cpu-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  HF_HUB_OFFLINE: "1"
+  TRANSFORMERS_OFFLINE: "1"
+  PYTHONPATH: ${{ github.workspace }}/recipes:${{ github.workspace }}/src:${{ github.workspace }}/.ci/alpamayo/src
+
+jobs:
+  stage1-vlm:
+    name: Stage-1 VLM loading
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.19"
+          enable-cache: true
+          cache-suffix: stage1-vlm-cpu
+          cache-dependency-glob: |
+            .github/requirements/stage1-vlm-cpu.in
+            .github/requirements/pylock.stage1-vlm-cpu.toml
+            recipes/alpamayo1_sft/uv.lock
+            recipes/alpamayo1_5_sft/uv.lock
+
+      - name: Resolve locked Alpamayo source
+        id: alpamayo_source
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          import tomllib
+          from pathlib import Path
+
+          lock_paths = (
+              Path("recipes/alpamayo1_sft/uv.lock"),
+              Path("recipes/alpamayo1_5_sft/uv.lock"),
+          )
+          sources = set()
+          for lock_path in lock_paths:
+              with lock_path.open("rb") as lock_file:
+                  packages = tomllib.load(lock_file)["package"]
+              matches = [package for package in packages if package["name"] == "alpamayo-r1"]
+              if len(matches) != 1:
+                  raise SystemExit(f"Expected one alpamayo-r1 package in {lock_path}")
+              sources.add(matches[0]["source"]["git"])
+
+          if len(sources) != 1:
+              raise SystemExit(f"SFT recipe Alpamayo sources differ: {sorted(sources)}")
+
+          source = sources.pop()
+          repository_url, separator, revision = source.rpartition("#")
+          if (
+              not separator
+              or repository_url != "https://github.com/NVlabs/alpamayo.git"
+              or len(revision) != 40
+          ):
+              raise SystemExit(f"Unexpected Alpamayo source: {source}")
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              print(f"ref={revision}", file=output)
+          PY
+
+      - name: Check out locked Alpamayo source
+        uses: actions/checkout@v4
+        with:
+          repository: NVlabs/alpamayo
+          ref: ${{ steps.alpamayo_source.outputs.ref }}
+          path: .ci/alpamayo
+          sparse-checkout: |
+            src/alpamayo_r1
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Sync CPU test dependencies
+        run: >-
+          uv pip sync --system --torch-backend cpu --require-hashes
+          --only-binary :all: --no-binary antlr4-python3-runtime
+          .github/requirements/pylock.stage1-vlm-cpu.toml
+
+      - name: Run Alpamayo 1 Stage-1 VLM tests
+        run: >-
+          python -m pytest -q -p no:cacheprovider
+          recipes/alpamayo1_sft/tests/test_stage1_vlm_loading.py
+
+      - name: Run Alpamayo 1.5 Stage-1 VLM tests
+        run: >-
+          python -m pytest -q -p no:cacheprovider
+          recipes/alpamayo1_5_sft/tests/test_stage1_vlm_loading.py
