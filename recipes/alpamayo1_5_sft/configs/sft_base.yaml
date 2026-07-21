@@ -52,7 +52,9 @@ trainer:
   num_train_epochs: 3
   bf16: True
   dataloader_pin_memory: True
-  dataloader_num_workers: 2
+  dataloader_num_workers: 8
+  dataloader_persistent_workers: true
+  dataloader_prefetch_factor: 4
   remove_unused_columns: False
   report_to: none # change to "wandb" when enabling W&B
   lr_scheduler_type: cosine_warmup_with_min_lr
@@ -66,3 +68,10 @@ trainer:
     use_reentrant: false # recommended by PyTorch for performance
 task_name: alpamayo_r1_5_sft
 run_name: ${task_name}_${now:%Y%m%d}_${now:%H%M%S}
+
+# Data-pipeline optimizations. Disable zip_cache if CPU RAM is tight on large chunk ranges.
+performance:
+  zip_cache: true
+  collate_cache: true
+  tf32: true
+  cudnn_benchmark: true

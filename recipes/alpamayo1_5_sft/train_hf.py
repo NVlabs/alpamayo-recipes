@@ -17,6 +17,7 @@ import os
 import hydra
 import hydra.utils as hyu
 import torch
+from functools import partial
 from omegaconf import DictConfig, OmegaConf
 
 from alpamayo_r1.common import logging
@@ -24,6 +25,13 @@ from alpamayo.common import misc
 
 from alpamayo1_5_sft.trainer import ReasoningVLA_Trainer
 from alpamayo1_5_sft.trainer import TrainingArguments
+from alpamayo1_5_sft.performance.apply_optimizations import (
+    apply_model_optimizations,
+    apply_runtime_optimizations,
+    enable_zip_cache,
+)
+from alpamayo1_5_sft.performance.collate_cache import collate_fn_from_model_config_cached
+from alpamayo1_5_sft.performance.perf_utils import perf_plain
 
 from alpamayo.common import config_utils
 from alpamayo.common import wandb_utils
@@ -38,12 +46,18 @@ logger.setLevel("INFO")
 @hydra.main(version_base=None, config_path=None, config_name="config")
 def train(cfg: DictConfig) -> None:
     """Main training entry point."""
+    perf = perf_plain(cfg)
+    apply_runtime_optimizations({"optimizations": perf})
+    if perf.get("zip_cache", False):
+        enable_zip_cache()
+
     misc.seed_everything(42)
 
     training_args = TrainingArguments(**OmegaConf.to_container(cfg.trainer, resolve=True))
     logger.info("Configs:\n" + misc.pformat(OmegaConf.to_container(cfg, resolve=True)))
 
     model = hyu.instantiate(cfg.model, _convert_="partial")
+    apply_model_optimizations(model, {"optimizations": perf})
 
     train_dataset = hyu.instantiate(
         cfg.data.train_dataset, _convert_="partial", model_config=model.config
@@ -52,9 +66,12 @@ def train(cfg: DictConfig) -> None:
         cfg.data.val_dataset, _convert_="partial", model_config=model.config
     )
 
-    collate_fn = hyu.instantiate(
-        cfg.data.collate_fn, _convert_="partial", model_config=model.config
-    )
+    if perf.get("collate_cache", False):
+        collate_fn = partial(collate_fn_from_model_config_cached, model_config=model.config)
+    else:
+        collate_fn = hyu.instantiate(
+            cfg.data.collate_fn, _convert_="partial", model_config=model.config
+        )
 
     callbacks = []
     for cb_name, cb_cfg in cfg.callbacks.items():
