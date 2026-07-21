@@ -1,0 +1,30 @@
+{
+  "summary": {
+    "num_clips": 1,
+    "mean_minADE": 0.3579704761505127
+  },
+  "results": [
+    {
+      "clip_id": "030c760c-ae38-49aa-9ad8-f5650a545d26",
+      "t0_us": 5100000,
+      "num_traj_samples": 4,
+      "minADE": 0.3579704761505127,
+      "all_ADE": [
+        0.37808772921562195,
+        1.970987319946289,
+        0.3579704761505127,
+        0.9007388949394226
+      ],
+      "cot": [
+        [
+          [
+            "Nudge to the left to clear the construction equipment blocking the right side of our lane",
+            "Nudge to the left to clear the construction equipment blocking the right side of our lane",
+            "Nudge to the left to clear the construction equipment blocking the right side of our lane",
+            "Keep distance to the lead vehicle since it is directly ahead in our lane"
+          ]
+        ]
+      ]
+    }
+  ]
+}
