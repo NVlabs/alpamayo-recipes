@@ -120,7 +120,11 @@ class PhysicalAIAVDatasetLocalInterface:
 
     @staticmethod
     def _read_reasoning_data(reasoning_df: pd.DataFrame) -> dict[str, dict[str, Any]]:
-        """Parse reasoning parquet: clip_id -> ``event_t0s`` (us) and ``cot`` from ``events``."""
+        """Parse reasoning parquet into per-clip timestamps and normalized text.
+
+        External ``coc`` and legacy ``cot`` event fields are normalized into the
+        internal ``cot`` field.
+        """
         out: dict[str, dict[str, Any]] = {}
         if "events" not in reasoning_df.columns:
             return out
@@ -144,7 +148,8 @@ class PhysicalAIAVDatasetLocalInterface:
             for ev in parsed:
                 if isinstance(ev, dict) and "event_start_timestamp" in ev:
                     ts_list.append(int(ev["event_start_timestamp"]))
-                    cot_list.append(str(ev.get("cot", "")))
+                    reasoning_text = ev.get("coc", ev.get("cot", ""))
+                    cot_list.append(str(reasoning_text))
             out[cid] = {
                 "event_t0s": np.asarray(ts_list, dtype=np.int64),
                 "cot": cot_list,
@@ -154,9 +159,10 @@ class PhysicalAIAVDatasetLocalInterface:
     def filter_clips_by_event_t0s(self) -> None:
         """Filter clip_index using ``self.reasoning_db`` per-clip ``event_t0s`` / ``cot``.
 
-        Each reasoning entry comes from parsed ``events`` (``event_start_timestamp``,
-        ``cot``). Keeps only events where ``event_t0 >= start_safe_margin_seconds``
-        (in µs) and         ``event_t0 + end_safe_margin_seconds`` (in µs) <= ``CLIP_RELATIVE_DURATION_US``
+        External ``coc`` and legacy ``cot`` labels in parsed ``events`` are normalized
+        into the internal ``cot`` field. Keeps only events where
+        ``event_t0 >= start_safe_margin_seconds`` (in µs) and
+        ``event_t0 + end_safe_margin_seconds`` (in µs) <= ``CLIP_RELATIVE_DURATION_US``
         (20 s, fixed relative clip length). Drops rows
         with no reasoning entry or empty ``event_t0s`` after filtering. Writes aligned
         ``event_t0s`` and ``cot`` columns on ``clip_index``.
