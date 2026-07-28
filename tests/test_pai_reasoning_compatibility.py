@@ -89,12 +89,22 @@ def _load_pai_utils(monkeypatch: pytest.MonkeyPatch) -> types.ModuleType:
             "current",
             id="current-coc-takes-precedence",
         ),
+        pytest.param(
+            {"coc": "", "cot": "legacy"},
+            "",
+            id="empty-coc-does-not-fall-back",
+        ),
+        pytest.param(
+            {"coc": None, "cot": "legacy"},
+            "None",
+            id="null-coc-does-not-fall-back",
+        ),
         pytest.param({}, "", id="missing-remains-empty"),
     ],
 )
 def test_reasoning_event_text_supports_current_and_legacy_keys(
     monkeypatch: pytest.MonkeyPatch,
-    event_fields: dict[str, str],
+    event_fields: dict[str, str | None],
     expected: str,
 ) -> None:
     pai_utils = _load_pai_utils(monkeypatch)
