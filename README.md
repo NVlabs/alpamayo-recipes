@@ -8,6 +8,14 @@ Whether you are experimenting locally or building a full production stack, this 
 intended as the primary starting point for developers to learn, customize, and extend
 Alpamayo for their own use cases.
 
+## Support
+
+📣 **Usage questions and discussion about Alpamayo Recipes**: please join us on the [Alpamayo NV Developer Forum](https://forums.developer.nvidia.com/c/autonomous-vehicles/alpamayo/766).
+
+🐛 **Code-level bugs, documentation issues, and feature requests**: file a [GitHub issue](../../issues/new/choose) using the appropriate template (Bug report, Documentation request, or Feature request). The relevant NVIDIA responder is auto-assigned via the `assignees:` field on the template.
+
+🚨 **Security vulnerabilities**: please use [NVIDIA's Vulnerability Disclosure Program](https://app.intigriti.com/programs/nvidia/nvidiavdp/detail). Do not file security issues publicly here.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the repository layout, recipe packaging conventions,
