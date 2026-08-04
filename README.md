@@ -64,7 +64,7 @@ This repository holds the post-training recipes and utility scripts. The models,
 
 ## Recipes
 
-End-to-end recipes for the Alpamayo VLA models, covering supervised fine-tuning (SFT), open-loop reinforcement learning (RL), and quantization. 
+End-to-end recipes for the Alpamayo VLA models, covering supervised fine-tuning (SFT), open-loop reinforcement learning (RL), and quantization.
 **Each recipe includes:**
 - **Data preparation** using the utility scripts to download and curate the Physical AI Autonomous Vehicles dataset
 - **Training configuration** with model, optimizer, and hyperparameter settings
