@@ -20,6 +20,7 @@ from __future__ import annotations
 from typing import Callable
 
 import torch
+import torch.nn.functional as F
 from cosmos_rl.utils.logging import logger
 
 
@@ -182,3 +183,31 @@ def shard_lm_layers(
 
     fully_shard(language_model, **fsdp_config, reshard_after_forward=True)
     logger.info(f"[{model_name}][FSDP] Sharded language model ({n_layers} layers)")
+
+
+def pad_linear_for_fsdp(linear: torch.nn.Linear, min_out: int) -> None:
+    """Pad an nn.Linear so every FSDP shard is non-empty.
+
+    When out_features < dp_shard_size, the bias (and potentially weight rows)
+    produce zero-element DTensor shards.  Pads weight and bias with zeros so
+    out_features == min_out, then registers a forward hook that slices output
+    back to the original dimension.
+    """
+    if linear.out_features >= min_out:
+        return
+    orig_out = linear.out_features
+    pad = min_out - orig_out
+    with torch.no_grad():
+        linear.weight = torch.nn.Parameter(F.pad(linear.weight.data, (0, 0, 0, pad)))
+        if linear.bias is not None:
+            linear.bias = torch.nn.Parameter(F.pad(linear.bias.data, (0, pad)))
+    linear.out_features = min_out
+
+    def _slice_hook(_mod, _inp, out, _n=orig_out):
+        return out[..., :_n]
+
+    linear.register_forward_hook(_slice_hook)
+    logger.info(
+        f"[FSDP] Padded Linear out_features {orig_out} -> {min_out} "
+        f"(bias numel {orig_out} -> {min_out}) to avoid empty DTensor shards"
+    )

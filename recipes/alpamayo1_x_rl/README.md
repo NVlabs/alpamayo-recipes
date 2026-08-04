@@ -435,6 +435,13 @@ text and discrete trajectory tokens. The action expert
 head (flow-matching-based continuous actions) is **not** trained
 by this RL pipeline. RL post-training for the **action expert pathway** will come in a future release.
 
+The `models/expert_model/` package is currently an importable support layer
+for AlpaGym closed-loop action expert RL integration. It is not a standalone
+action expert RL recipe in this repository and does not add new public
+`cosmos-rl` launch commands, recipe TOMLs, rollout backends, trainers, or
+rewards here. See [`models/expert_model/README.md`](models/expert_model/README.md)
+for the integration boundary.
+
 </details>
 
 <details>

@@ -6,6 +6,7 @@ dependencies = [
   "alpamayo_r1",  # inference models, action_space, geometry.rotation, common.logging, etc.
   "alpamayo-recipes",  # recipe-side utilities (chat_template, data, metrics, common, etc.)
   "cosmos-rl",
+  "diffusers>=0.37.1",  # diffusion/flow_matching.py uses diffusers.utils.torch_utils.randn_tensor
   "einops>=0.8.1",
   "hydra-core>=1.3.2",
   "torch==2.8.0",
@@ -36,7 +37,7 @@ dev = [
 no-build-isolation-package = ["flash-attn"]
 
 [tool.uv.sources]
-alpamayo_r1 = { git = "https://github.com/NVlabs/alpamayo.git" }
+alpamayo_r1 = { git = "https://github.com/NVlabs/alpamayo.git", rev = "4cda35d22bb257f0936ac272397627b9309ca211" }
 alpamayo-recipes = { path = "../../src", editable = true }
 cosmos-rl = { git = "https://github.com/nvidia-cosmos/cosmos-rl.git", rev = "747d1bd" }
 
