@@ -1,6 +1,6 @@
-# Alpamayo RL Post-training using Cosmos RL
+# Alpamayo Open-loop RL Post-training using Cosmos RL
 
-This directory contains the RL post-training code for fine-tuning
+This directory contains the open-loop RL post-training code for fine-tuning
 Alpamayo models (VLM backbone with discrete action-token variant) using GRPO via Cosmos-RL. The code supports both [Alpamayo 1](https://huggingface.co/nvidia/Alpamayo-R1-10B) and [Alpamayo 1.5](https://huggingface.co/nvidia/Alpamayo-1.5-10B).
 
 <p align="center">

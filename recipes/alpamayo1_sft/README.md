@@ -143,7 +143,7 @@ Example log lines:
 ```
 
 
-### Stage 1 (CoC reasoining enabled)
+### Stage 1 (CoC reasoning enabled)
 
 Note that in the sample scenario provided above, CoC labels are not used. Enabling CoC requires **two** pieces to be in sync — miss any one and the run aborts with either `AssertionError: cot not found in data but 'cot' in components_order` or `ValueError: Event timestamp 5100000 not found for <clip_id> in reasoning_db`.
 
