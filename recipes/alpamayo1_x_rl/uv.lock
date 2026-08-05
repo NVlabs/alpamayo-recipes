@@ -84,7 +84,7 @@ wheels = [
 [[package]]
 name = "alpamayo-r1"
 version = "0.1.0"
-source = { git = "https://github.com/NVlabs/alpamayo.git#db752463858cb4fc7a8a0ca0348f4220b6cb2608" }
+source = { git = "https://github.com/NVlabs/alpamayo.git#f3198c2f6158e1158ae8cb4fc7d7716bd25085bb" }
 dependencies = [
     { name = "colorlog" },
     { name = "einops" },
