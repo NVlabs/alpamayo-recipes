@@ -15,14 +15,14 @@ def apply_runtime_optimizations(cfg: dict[str, Any]) -> dict[str, Any]:
     applied: dict[str, Any] = {}
     opt = cfg.get("optimizations") or {}
 
-    if opt.get("tf32", False):
-        torch.backends.cuda.matmul.allow_tf32 = True
-        torch.backends.cudnn.allow_tf32 = True
-        applied["tf32"] = True
+    tf32 = opt.get("tf32", False)
+    torch.backends.cuda.matmul.allow_tf32 = tf32
+    torch.backends.cudnn.allow_tf32 = tf32
+    applied["tf32"] = tf32
 
-    if opt.get("cudnn_benchmark", False):
-        torch.backends.cudnn.benchmark = True
-        applied["cudnn_benchmark"] = True
+    cudnn_benchmark = opt.get("cudnn_benchmark", False)
+    torch.backends.cudnn.benchmark = cudnn_benchmark
+    applied["cudnn_benchmark"] = cudnn_benchmark
 
     if opt.get("matmul_precision", None):
         precision = opt["matmul_precision"]
