@@ -69,9 +69,10 @@ trainer:
 task_name: alpamayo_r1_5_sft
 run_name: ${task_name}_${now:%Y%m%d}_${now:%H%M%S}
 
-# Data-pipeline optimizations. Disable zip_cache if CPU RAM is tight on large chunk ranges.
+# Data-pipeline optimizations. zip_cache and collate_cache are opt-in caches that
+# trade CPU RAM for faster data loading; enable them when RAM allows.
 performance:
-  zip_cache: true
-  collate_cache: true
+  zip_cache: false
+  collate_cache: false
   tf32: true
   cudnn_benchmark: true

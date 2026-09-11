@@ -92,6 +92,8 @@ def test_alpamayo1_sft_stage_configs_preserve_training_contract() -> None:
     assert base["data"]["val_dataset"]["vla_preprocess_args"]["generation_mode"] is True
     assert base["trainer"]["deepspeed"] == "configs/deepspeed/zero2.json"
     assert base["trainer"]["gradient_checkpointing"] is True
+    assert base["performance"]["zip_cache"] is False
+    assert base["performance"]["collate_cache"] is False
     assert stage2["trainer"]["deepspeed"] is None
     assert stage2["trainer"]["gradient_checkpointing"] is False
 
@@ -166,6 +168,8 @@ def test_alpamayo1_5_sft_configs_preserve_nav_and_lingoqa_contracts() -> None:
     )
     assert nav_stage2["trainer"]["deepspeed"] is None
     assert nav_stage2["trainer"]["gradient_checkpointing"] is False
+    assert base["performance"]["zip_cache"] is False
+    assert base["performance"]["collate_cache"] is False
 
     assert processors["default"]["components_order"] == ["image", "traj_history", "prompt", "traj_future"]
     assert processors["nav"]["components_order"] == ["image", "traj_history", "route", "prompt", "traj_future"]
