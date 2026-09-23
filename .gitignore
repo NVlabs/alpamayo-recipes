@@ -6,4 +6,6 @@ dist/
 outputs/*
 *.egg-info
 output_stage*
-*.egg-info
+recipes/alpamayo1_5_eval/outputs/*
+# uv virtual environments created inside recipe directories
+**/a1_5_eval_test/

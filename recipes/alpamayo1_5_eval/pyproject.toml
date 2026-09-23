@@ -1,0 +1,42 @@
+[project]
+name = "alpamayo1-5-eval"
+version = "0.1.0"
+requires-python = "==3.12.*"
+dependencies = [
+  "alpamayo_r1",  # inference models, action_space, geometry.rotation, common.logging, etc.
+  "alpamayo-recipes",  # recipe-side utilities (chat_template, data, metrics, common, etc.)
+  "einops>=0.8.1",
+  "physical_ai_av>=0.2.0",
+  "pillow>=12.0.0",
+  "scipy>=1.15.3",
+  "torch==2.8.0",
+  "torchvision>=0.23.0",
+  "transformers==4.57.1",
+]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+# Look one level up (recipes/) so setuptools finds alpamayo1_5_eval/ as a proper package.
+# The editable install adds recipes/ to sys.path, making `alpamayo1_5_eval` importable
+# from within this directory once the venv is active.
+[tool.setuptools.packages.find]
+where = [".."]
+include = ["alpamayo1_5_eval*"]
+
+[dependency-groups]
+dev = [
+  "ipykernel>=6.29.3",
+  "ipywidgets>=8.1.8",
+]
+
+[tool.uv]
+no-build-isolation-package = ["flash-attn"]
+
+[tool.uv.sources]
+alpamayo_r1 = { git = "https://github.com/NVlabs/alpamayo.git" }
+alpamayo-recipes = { path = "../../src", editable = true }
+
+[tool.ruff]
+line-length = 100
