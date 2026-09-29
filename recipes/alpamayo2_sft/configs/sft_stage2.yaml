@@ -1,0 +1,17 @@
+defaults:
+  - sft_base
+  - _self_
+
+model:
+  training_stage: expert
+  stage1_vlm_checkpoint_path: null
+
+paths:
+  output_dir: ./outputs/stage2
+
+trainer:
+  max_steps: 64000
+  gradient_accumulation_steps: 32
+  learning_rate: 4.0e-4
+  lr_multiplier: null
+  gradient_checkpointing: false

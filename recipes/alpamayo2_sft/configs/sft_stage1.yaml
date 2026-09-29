@@ -1,0 +1,9 @@
+defaults:
+  - sft_base
+  - _self_
+
+model:
+  training_stage: vlm
+
+paths:
+  output_dir: ./outputs/stage1

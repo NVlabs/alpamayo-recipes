@@ -1,0 +1,5 @@
+_target_: alpamayo2_sft.models.trainable_alpamayo2_super.TrainableAlpamayo2Super.from_pretrained
+pretrained_model_name_or_path: nvidia/Alpamayo2-Super
+dtype: bfloat16
+training_stage: vlm
+stage1_vlm_checkpoint_path: null

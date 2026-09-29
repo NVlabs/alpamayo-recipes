@@ -1,0 +1,95 @@
+defaults:
+  - /model: release
+  - /preprocess@data.train_dataset.preprocess: trajectory
+  - /preprocess@data.val_dataset.preprocess: trajectory_generation
+  # - /wandb: default # uncomment to enable W&B logging
+  - _self_
+
+seed: 42
+camera_features:
+  - camera_cross_left_120fov
+  - camera_front_wide_120fov
+  - camera_cross_right_120fov
+  - camera_rear_left_70fov
+  - camera_rear_tele_30fov
+  - camera_rear_right_70fov
+  - camera_front_tele_30fov
+num_frames: 4
+include_calibration: false
+
+paths:
+  output_dir: ./outputs/alpamayo2_super_sft
+
+data:
+  train_dataset:
+    _target_: alpamayo2_sft.dataset.PhysicalAIDataset
+    _recursive_: false
+    local_dir: ???
+    # Chunk ranges are half-open: this selects chunks 0 through 98.
+    chunk_ids: "0-99"
+    use_default_keyframe: true
+    camera_features: ${camera_features}
+    num_frames: ${num_frames}
+    include_calibration: ${include_calibration}
+  val_dataset:
+    _target_: alpamayo2_sft.dataset.PhysicalAIDataset
+    _recursive_: false
+    local_dir: ???
+    # Hold out chunk 99 from training.
+    chunk_ids: "99-100"
+    use_default_keyframe: true
+    camera_features: ${camera_features}
+    num_frames: ${num_frames}
+    include_calibration: ${include_calibration}
+  collator:
+    _target_: alpamayo2_sft.processor.Alpamayo2SuperCollator
+    max_length: 6144
+    pad_to_fixed_length: true
+
+callbacks: {}
+
+evaluate:
+  mode: loss
+  eval_ckpt: null
+  max_eval_steps: 100
+  autocast_dtype: bfloat16
+  num_traj_samples: 6
+  num_samples_per_forward: 2
+  num_traj_sets: 1
+  top_p: 0.98
+  temperature: 0.6
+  max_generation_length: 256
+
+trainer:
+  output_dir: ${paths.output_dir}
+  resume_from_checkpoint: null
+  max_steps: 100000
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 16
+  learning_rate: 5.0e-5
+  lr_multiplier:
+    vlm.model.visual: 0.1
+  weight_decay: 0.1
+  adam_beta1: 0.9
+  adam_beta2: 0.95
+  adam_epsilon: 1.0e-8
+  max_grad_norm: 1.0
+  warmup_steps: 4000
+  lr_scheduler_type: cosine_with_min_lr
+  lr_scheduler_kwargs:
+    min_lr_rate: 0.01
+  optim: adamw_torch_fused
+  bf16: true
+  gradient_checkpointing: true
+  gradient_checkpointing_kwargs:
+    use_reentrant: false
+  deepspeed: configs/deepspeed/zero3.json
+  dataloader_num_workers: 4
+  dataloader_pin_memory: true
+  remove_unused_columns: false
+  logging_steps: 5
+  save_steps: 500
+  save_total_limit: 20
+  report_to: none # change to "wandb" when enabling W&B
+  run_name: alpamayo2-sft-${now:%Y%m%d-%H%M%S}

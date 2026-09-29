@@ -156,6 +156,8 @@ Existing packaged recipes commonly use:
 
 - `alpamayo_r1`, fetched from `https://github.com/NVlabs/alpamayo.git`, for released model code,
   processors, geometry, and inference-time components.
+- `alpamayo2_super`, fetched from `https://github.com/NVlabs/alpamayo2`, for the released
+  Alpamayo 2 Super model, tokenizer, expert, action-space, diffusion, and data-loading APIs.
 - `alpamayo-recipes`, installed editable from `../../src`, for shared recipe-side utilities.
 
 New recipes should follow this repository convention unless there is a concrete reason to do

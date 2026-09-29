@@ -48,6 +48,7 @@ def test_recipe_structured_files_parse() -> None:
         *RECIPES_DIR.glob("*/*/**/*.yaml"),
         *RECIPES_DIR.glob("*/*/**/*.json"),
     ]
+    structured_files = [path for path in structured_files if "outputs" not in path.parts]
     assert structured_files
 
     for path in structured_files:
@@ -175,6 +176,46 @@ def test_alpamayo1_5_sft_configs_preserve_nav_and_lingoqa_contracts() -> None:
     assert processors["vqa"]["label_components"] == ["answer"]
     assert base_model["_target_"].endswith("TrainableReasoningVLA.from_alpamayo_checkpoint")
     assert expert_model["pretrained_model_name_or_path"] == "nvidia/Alpamayo-1.5-10B"
+
+
+def test_alpamayo2_sft_uses_release_native_model_and_held_out_validation_chunk() -> None:
+    recipe_dir = RECIPES_DIR / "alpamayo2_sft"
+    readme = recipe_dir / "README.md"
+    base = _load_yaml(recipe_dir / "configs" / "sft_base.yaml")
+    stage1 = _load_yaml(recipe_dir / "configs" / "sft_stage1.yaml")
+    stage2 = _load_yaml(recipe_dir / "configs" / "sft_stage2.yaml")
+    model = _load_yaml(recipe_dir / "configs" / "model" / "release.yaml")
+    pyproject = _load_toml(recipe_dir / "pyproject.toml")
+
+    _assert_text_contains(
+        readme,
+        [
+            "nvidia/Alpamayo2-Super",
+            "https://github.com/NVlabs/alpamayo2",
+            "-m alpamayo2_sft.train",
+            "-m alpamayo2_sft.evaluate",
+            "--config-name sft_eval_loss",
+            "--config-name sft_eval_trajectory",
+            'chunk_ids="0-99"',
+            'chunk_ids="99-100"',
+        ],
+    )
+
+    assert base["data"]["train_dataset"]["chunk_ids"] == "0-99"
+    assert base["data"]["val_dataset"]["chunk_ids"] == "99-100"
+    assert len(base["camera_features"]) == 7
+    assert base["num_frames"] == 4
+    assert base["data"]["collator"]["max_length"] == 6144
+    assert base["data"]["collator"]["pad_to_fixed_length"] is True
+    assert stage1["model"]["training_stage"] == "vlm"
+    assert stage2["model"]["training_stage"] == "expert"
+    assert "data" not in stage2
+    assert model["_target_"].endswith("TrainableAlpamayo2Super.from_pretrained")
+    assert model["pretrained_model_name_or_path"] == "nvidia/Alpamayo2-Super"
+    assert pyproject["project"]["dependencies"][0] == "alpamayo2_super"
+    assert pyproject["tool"]["uv"]["sources"]["alpamayo2_super"] == {
+        "git": "https://github.com/NVlabs/alpamayo2.git"
+    }
 
 
 def test_alpamayo1_x_rl_toml_configs_preserve_local_launch_contract() -> None:

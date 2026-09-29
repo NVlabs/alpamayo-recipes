@@ -4,6 +4,7 @@ __pycache__/
 **/.venv/
 dist/
 outputs/*
+**/outputs/
+**/wandb/
 *.egg-info
 output_stage*
-*.egg-info
