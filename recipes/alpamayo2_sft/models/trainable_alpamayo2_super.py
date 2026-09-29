@@ -316,4 +316,3 @@ class TrainableAlpamayo2Super(Alpamayo2Super):
         if torch.any(positions[:, 1] != positions[0, 1]):
             raise ValueError("Expert batches require left padding")
         return int(positions[0, 1].item() + 1)
-

@@ -354,4 +354,3 @@ licenses.
 short single-node smoke.
 - Trajectory evaluation rejects multiple processes: launch it with
 `CUDA_VISIBLE_DEVICES=0 python`, not `torchrun`.
-
