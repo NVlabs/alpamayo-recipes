@@ -1,0 +1,27 @@
+defaults:
+  - sft_stage1
+  - _self_
+
+camera_features:
+  - camera_front_wide_120fov
+num_frames: 1
+
+paths:
+  output_dir: ./outputs/stage1_single_node_debug
+
+data:
+  train_dataset:
+    chunk_ids: "0-1"
+  val_dataset:
+    chunk_ids: "0-1"
+  collator:
+    pad_to_fixed_length: false
+
+trainer:
+  max_steps: 2
+  gradient_accumulation_steps: 1
+  deepspeed: configs/deepspeed/zero3_optimizer_offload.json
+  dataloader_num_workers: 0
+  logging_steps: 1
+  save_strategy: "no"
+  report_to: none

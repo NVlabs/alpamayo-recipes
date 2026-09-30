@@ -1,0 +1,17 @@
+defaults:
+  - sft_stage1
+  - _self_
+
+paths:
+  output_dir: ./outputs/eval_trajectory
+
+evaluate:
+  mode: trajectory
+
+model:
+  training_stage: expert
+
+trainer:
+  prediction_loss_only: true
+  gradient_checkpointing: false
+  deepspeed: null

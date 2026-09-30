@@ -18,6 +18,7 @@
 import os
 import json
 import io
+import logging
 import pathlib
 import zipfile
 from typing import Any, Iterable
@@ -27,10 +28,7 @@ import numpy as np
 from physical_ai_av import egomotion, video
 from physical_ai_av.dataset import Features
 
-from alpamayo_r1.common import logging
-
-logger = logging.RankedLogger(__name__, rank_zero_only=False)
-logger.setLevel("INFO")
+logger = logging.getLogger(__name__)
 
 # PAI clips are a fixed 20s relative timeline (µs); use this instead of per-row ``end_timestamp``.
 CLIP_RELATIVE_DURATION_US = 20_000_000
