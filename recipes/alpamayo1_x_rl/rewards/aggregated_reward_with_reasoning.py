@@ -57,8 +57,8 @@ def compute_reward(
 
     Trajectory and comfort match :func:`alpamayo1_x_rl.rewards.aggregated_reward.compute_reward`.
     Additionally parses CoT from ``to_be_evaluated``, grades it against ground-truth
-    CoT when both are present, and adds the weighted reasoning component (or a
-    penalty when CoT is missing after decode).
+    CoT when both are nonempty, and subtracts a normalized reasoning penalty.
+    Missing CoT or failing either the reasoning or ADE gate yields a fixed penalty.
     """
     from alpamayo_r1.models.token_utils import extract_between_special_tokens
     from alpamayo1_x_rl.rewards.comfort_reward import compute_comfort
@@ -90,6 +90,9 @@ def compute_reward(
 
     pred_cot = extract_between_special_tokens([to_be_evaluated], token="cot")[0]
     gt_cot = reference.get("cot", "")
+    pred_cot_decoded = bool(pred_cot and pred_cot.strip())
+    gt_cot_available = bool(gt_cot and gt_cot.strip())
+    cot_available = pred_cot_decoded and gt_cot_available
 
     logger.debug(f"[compute_reward] Pred_cot: {pred_cot}")
     logger.debug(f"[compute_reward] GT_cot: {gt_cot}")
@@ -99,21 +102,21 @@ def compute_reward(
     )
 
     reasoning_score = -1.0
-    if pred_cot and gt_cot:
+    if cot_available:
         grader = get_reasoning_grader_from_config(config)
         raw_score = float(grader.score(pred_cot, gt_cot).item())
         reasoning_score = raw_score - 1.0
 
-    # Continuous reward: each component contributes independently, no hard gates.
+    # Gated reward: require CoT, sufficient reasoning quality, and ADE below threshold.
     ade_threshold = 3.0
     reasoning_threshold = -0.4
-    pred_cot_decoded = bool(pred_cot and len(pred_cot.strip()) > 0)
 
-    if pred_cot_decoded and reasoning_score > reasoning_threshold and l2_dist < ade_threshold:
+    if cot_available and reasoning_score > reasoning_threshold and l2_dist < ade_threshold:
+        # The reasoning ratio is a nonnegative error: subtract it so better CoT earns more.
         final_reward = (
             -w["traj_l2_weight"] * (l2_dist / ade_threshold)
             + w["comfort_weight"] * comfort_score
-            + w["reasoning_weight"] * (reasoning_score / reasoning_threshold)
+            - w["reasoning_weight"] * (reasoning_score / reasoning_threshold)
         )
     else:
         final_reward = -1.0
