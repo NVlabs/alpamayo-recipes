@@ -37,6 +37,9 @@ setup_logging()
 logger = logging.RankedLogger(__name__, rank_zero_only=True)
 logger.setLevel("INFO")
 
+# Clip-id parquets live in the repo-root data/ directory so they can be shared across recipes.
+DATA_DIR = Path(__file__).resolve().parents[2] / "data"
+
 # Limit CPU threads to reduce memory bandwidth contention with GPU on unified memory (GB10)
 torch.set_num_threads(4)
 torch.set_num_interop_threads(2)
@@ -113,7 +116,9 @@ def compute_minade_for_clip_pytorch(
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--parquet", type=str, default="1005_7cam_gold_eval_metadb_public.parquet")
+    ap.add_argument(
+        "--parquet", type=str, default=str(DATA_DIR / "1005_7cam_gold_eval_metadb_public.parquet")
+    )
     ap.add_argument("--t0_us", type=int, default=5_100_000)
     ap.add_argument("--ckpt", type=str, default="nvidia/Alpamayo-1.5-10B")
     ap.add_argument("--num_traj_samples", type=int, default=6)
@@ -137,8 +142,7 @@ def main():
     )
     args = ap.parse_args()
 
-    script_dir = Path(__file__).resolve().parent
-    parquet_path = (script_dir / args.parquet).resolve()
+    parquet_path = Path(args.parquet).resolve()
 
     clip_ids = read_clip_ids_from_parquet(str(parquet_path))
     if args.limit is not None and args.limit > 0:

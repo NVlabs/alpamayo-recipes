@@ -136,6 +136,8 @@ Python environment.
 - `src/alpamayo/` contains lightweight utilities shared across recipes, such as chat templates,
   data loaders, metrics, checkpoint helpers, visualization, and common helpers.
 - `scripts/` contains repo-level utility scripts that are useful across multiple recipes.
+- `data/` contains small data files shared across recipes, such as the clip-id lists used for
+  quantization calibration and evaluation.
 
 This layout lets each recipe choose the dependencies, lockfile, model path assumptions, and
 runtime setup that fit that workflow.

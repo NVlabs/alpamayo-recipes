@@ -38,6 +38,9 @@ setup_logging()
 logger = logging.RankedLogger(__name__, rank_zero_only=True)
 logger.setLevel("INFO")
 
+# Clip-id parquets live in the repo-root data/ directory so they can be shared across recipes.
+DATA_DIR = Path(__file__).resolve().parents[2] / "data"
+
 
 # Additional method that needs to be added to the Alpamayo1_5 class. We add this via setattr when this file is loaded
 def _am1_5_ext_teacher_forced_flow_loss_forward(
@@ -246,7 +249,9 @@ def main():
     ap.add_argument("--quant_algo", type=str, default="max", choices=["max", "smoothquant"])
     ap.add_argument("--quant_weight_only", action="store_true")
     ap.add_argument(
-        "--calib_parquet", type=str, default="0417_5k_train_set_for_calibration_25.10.parquet"
+        "--calib_parquet",
+        type=str,
+        default=str(DATA_DIR / "0417_5k_train_set_for_calibration_25.10.parquet"),
     )
     ap.add_argument("--num_of_calib_clips", type=int, default=100)
     ap.add_argument("--save_model_dir", type=str, required=True)
@@ -259,8 +264,7 @@ def main():
     )
     args = ap.parse_args()
 
-    script_dir = Path(__file__).resolve().parent
-    calib_parquet_path = (script_dir / args.calib_parquet).resolve()
+    calib_parquet_path = Path(args.calib_parquet).resolve()
     calib_clip_ids = read_clip_ids_from_parquet(str(calib_parquet_path))
     calib_clip_ids = calib_clip_ids[: args.num_of_calib_clips]
     logger.info(f"Loaded {len(calib_clip_ids)} calibration clip_ids from: {calib_parquet_path}")

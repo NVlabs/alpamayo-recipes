@@ -113,7 +113,7 @@ The quantization path is controlled by the following arguments:
 - `--quant_algo <algo>`: calibration algorithm. Defaults to `max`; `smoothquant` is also supported.
 - `--quant_weight_only` (optional): enables weight-only quantization.
 - `--auto_quantize_bits <N>`: effective-bits budget for AutoQuant. Defaults to `4.8`.
-- `--calib_parquet <path>`: calibration clip source. Defaults to `0417_5k_train_set_for_calibration_25.10.parquet`.
+- `--calib_parquet <path>`: calibration clip source. Defaults to `data/0417_5k_train_set_for_calibration_25.10.parquet` at the repository root.
 - `--num_of_calib_clips <N>`: number of calibration clips (1–5000). Defaults to `100`.
 - `--save_model_dir <path>`: directory under which the quantized model is saved. **Required.** The checkpoint is written to a subdirectory named after the format and calibration settings (e.g. `alpamayo1.5_fp8_calib100`).
 - `--fake_quant`: save a checkpoint with the Q/DQ nodes placed but the original weights preserved. For use with downstream SDKs like TensorRT
@@ -149,7 +149,7 @@ uv run --active quantize.py --quant_format=auto --auto_quantize_bits=6.5 --num_o
 Evaluation (`eval.py`) loads any Alpamayo 1.5 checkpoint — base FP16 or a quantized checkpoint saved by `quantize.py` — and reports per-clip and average minADE metrics.
 
 - `--ckpt <path_or_hub_id>`: checkpoint to evaluate. Defaults to `nvidia/Alpamayo-1.5-10B`. Pass the path saved by `quantize.py` to evaluate a quantized model.
-- `--parquet <path>`: evaluation clip source. Defaults to `1005_7cam_gold_eval_metadb_public.parquet`.
+- `--parquet <path>`: evaluation clip source. Defaults to `data/1005_7cam_gold_eval_metadb_public.parquet` at the repository root.
 - `--limit <N>`: number of clips to evaluate. Defaults to `644`.
 - `--num_traj_samples <N>`: trajectory samples per clip. Defaults to `6`.
 - `--print_every <N>`: log a progress line every N clips. Defaults to `25`.
