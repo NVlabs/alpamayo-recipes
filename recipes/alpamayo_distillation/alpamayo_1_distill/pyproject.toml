@@ -1,0 +1,86 @@
+[project]
+name = "alpamayo1-distill"
+version = "0.1.0"
+description = "Teacher-student distillation recipe for Alpamayo 1"
+readme = "README.md"
+requires-python = "==3.12.*"
+dependencies = [
+  "accelerate==1.12.0",
+  "av==16.0.1",
+  "colorlog==6.10.1",
+  "diffusers==0.36.0",
+  "einops==0.8.1",
+  "flash-attn==2.8.3",
+  "huggingface-hub==0.36.0",
+  "hydra-colorlog==1.2.0",
+  "hydra-core==1.3.2",
+  "numpy==2.3.5",
+  "pandas==2.3.3",
+  "physical-ai-av==0.1.0",
+  "pillow==12.0.0",
+  "pyarrow==22.0.0",
+  "safetensors==0.7.0",
+  "scipy==1.16.3",
+  "torch==2.8.0",
+  "torchvision==0.23.0",
+  "tqdm==4.67.1",
+  "transformers==4.57.1",
+]
+
+[build-system]
+requires = ["setuptools>=80,<81"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+include-package-data = false
+packages = [
+  "alpamayo1_distill",
+  "alpamayo1_distill.action_space",
+  "alpamayo1_distill.commons",
+  "alpamayo1_distill.data",
+  "alpamayo1_distill.dataloader",
+  "alpamayo1_distill.dataloader.physical_ai_av",
+  "alpamayo1_distill.dataloader.physical_ai_av.src",
+  "alpamayo1_distill.dataloader.physical_ai_av.src.physical_ai_av",
+  "alpamayo1_distill.dataloader.physical_ai_av.src.physical_ai_av.utils",
+  "alpamayo1_distill.diffusion",
+  "alpamayo1_distill.geometry",
+  "alpamayo1_distill.losses",
+  "alpamayo1_distill.models",
+  "alpamayo1_distill.processors",
+  "alpamayo1_distill.tests",
+  "alpamayo1_distill.tests.regression",
+  "alpamayo1_distill.tokenizer",
+  "alpamayo1_distill.tokenizer.trajectory",
+  "alpamayo1_distill.training",
+  "alpamayo1_distill.utils",
+]
+package-dir = { alpamayo1_distill = "." }
+
+[tool.setuptools.package-data]
+alpamayo1_distill = [
+  "config/*.json",
+  "config/*.txt",
+  "tests/regression/*.json",
+]
+
+[dependency-groups]
+test = ["pytest==9.0.2"]
+dev = [
+  { include-group = "test" },
+  "pre-commit==4.5.1",
+  "ruff>=0.14,<0.15",
+]
+
+[tool.uv]
+no-build-isolation-package = ["flash-attn"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+  "gpu_regression: requires CUDA, model weights, and PhysicalAI AV data",
+  "distributed: requires torchrun with multiple GPUs",
+]
+
+[tool.ruff]
+line-length = 100

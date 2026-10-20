@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "source": {
+    "backup_commit": "f600c96c199e68eb8048bec776117c4505bfd702",
+    "alpamayo1_tree": "1b845d5a5f749b4c29b78874c30872996efa777d",
+    "frozen_alpamayo1_5_tree": "964ead533401981611dfc40c403e82a9cb509e0b"
+  },
+  "reference_checkpoint": {
+    "label": "step_80000",
+    "train_args_sha256": "5de3588251fe6b33a9ed8b0e8e9a5ef0e5611bcc51e9e4dad994bdd9227ffc6a",
+    "config_sha256": "90c673ece508d7ee75b2fd613705cb6bc9f91433e3c80e61f36334ec1f9827a5",
+    "model_index_sha256": "e84489ea595d10b1d18da649f0ce5a5eec56f17bca8e1cc8ec322e2adb3538b7"
+  },
+  "student_architecture": {
+    "vlm_model": "nvidia/Cosmos-Reason2-2B",
+    "action_stack": "checkpoint-compatible approximately 100M action stack",
+    "vlm_parameter_count": 2135234560,
+    "action_path_parameter_count": 116128002,
+    "deployed_total_parameter_count": 2251362562
+  },
+  "training": {
+    "world_size": 128,
+    "batch_size_per_gpu": 1,
+    "gradient_accumulation_steps": 1,
+    "global_batch_size": 128,
+    "max_steps": 80000,
+    "learning_rate": 0.00021,
+    "minimum_learning_rate": 0.00001,
+    "vlm_learning_rate_scale": 0.5,
+    "vlm_minimum_learning_rate": 0.000001,
+    "warmup_ratio": 0.1,
+    "weight_decay": 0.01,
+    "vlm_weight_decay": 0.05,
+    "gradient_clip": 1.0,
+    "future_trajectory_weight": 2.0,
+    "future_trajectory_vlm_weight": 1.0,
+    "distillation_temperature": 0.5,
+    "distillation_weight": 1.0,
+    "vlm_loss_weight": 1.0,
+    "hidden_distillation_weight": 0.0001,
+    "use_zero1": true,
+    "dataset_source": "physical_ai_av_raw_clips",
+    "teacher_targets": "generated_online",
+    "random_t0": true,
+    "t0_seed": null,
+    "on_policy_start_step": 60000,
+    "on_policy_ratio": 0.5,
+    "on_policy_divergence": "forward_kl",
+    "on_policy_temperature": 1.0,
+    "on_policy_sample_temperature": 0.6,
+    "on_policy_sample_top_p": 0.98,
+    "validation_interval": 4000,
+    "checkpoint_interval": 4000
+  },
+  "evaluation": {
+    "seed": 42,
+    "seed_strategy": "reference",
+    "t0_us": 5100000,
+    "num_trajectory_samples": 6,
+    "top_p": 0.98,
+    "temperature": 0.6,
+    "gold_644": {
+      "result_sha256": "30cc0b1e9d38da8c4693ad7e3a1e76b4a8e968a83948f290be985b76bd931c98",
+      "expected_samples": 644,
+      "successful_samples": 644,
+      "failed_samples": 0,
+      "minade_at_6_m": 1.0355364056940404,
+      "greedy_ade_m": 1.6754344005993804
+    },
+    "full_90928": {
+      "result_sha256": "18bbdbf7b29488aad4c445afd5c5ea010b89f4f54bef10a2bfcb6ed10269b4d1",
+      "expected_samples": 90928,
+      "successful_samples": 90928,
+      "failed_samples": 0,
+      "minade_at_6_m": 0.9383153399669759,
+      "greedy_ade_m": 1.6704389732339207
+    }
+  }
+}

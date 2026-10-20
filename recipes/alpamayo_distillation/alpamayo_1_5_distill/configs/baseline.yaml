@@ -1,0 +1,177 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+data:
+  local_dir: null  # Set with data.local_dir or ALPAMAYO_DATASET_DIR.
+  split: train
+  t0_us: 5100000
+  t0_us_list: [3600000, 5100000, 7000000, 9000000, 12000000]
+  random_t0: true
+  samples_per_clip: 1
+  t0_margin_us: 0
+  max_clip_retries: 8
+  # Gold clips can be labeled train in the source index; always exclude them.
+  exclude_clip_ids_path: pkg://alpamayo1_5_distill/assets/clip_ids_eval_gold.txt
+  batch_size: 1
+  shuffle: true
+  num_workers: 8
+  prefetch_factor: 4
+  persistent_workers: true
+  pin_memory: true
+  mixture:
+    enabled: true
+    basic_ratio: 0.8
+    nav_ratio: 0.2
+    nav_t0_retries: 3
+    nav_sample_retries: 3
+    fallback_nav_to_basic: true
+  # Optional Stage-1 VQA stream. The integer-weight mixture matches the
+  # internal sampler: exposure is proportional to weight * dataset length,
+  # batches remain task-homogeneous, and the ratio is unchanged by the
+  # off-policy/on-policy schedule.
+  lingoqa:
+    enabled: true
+    # Required when enabled. Set with data.lingoqa.data_root on the command line.
+    data_root: null
+    parquet_name: train.parquet
+    # Preserve all five front-camera frames from each public LingoQA segment.
+    # This matches both the internal Stage-1 loader and the LingoQA benchmark.
+    n_frames: null
+    weight: 1
+    pai_weight: 1
+    max_new_tokens: 128
+  # Split the existing VQA batch budget between LingoQA and PhysicalAI-AV.
+  # PAI answers are generated online by the frozen Alpamayo 1.5 teacher.
+  pai_vqa:
+    enabled: true
+    probability: 0.5
+    questions: null  # Use the built-in driving question bank.
+    teacher_top_p: 0.98
+    teacher_temperature: 0.6
+    max_new_tokens: 256
+  nav:
+    enabled: true
+    root: null  # Set when navigation labels are enabled.
+    cohort: train
+    clip_index_path: null  # Optional text/JSONL index; otherwise scan train/*.jsonl once.
+    max_distance_m: -1  # -1 disables the distance filter.
+    exclude_unknown: true
+
+model:
+  factory: alpamayo1_5_distill.training.factory:build_student_model
+  kwargs:
+    teacher_name_or_path: nvidia/Alpamayo-1.5-10B
+    student_vlm_name_or_path: nvidia/Cosmos-Reason2-2B
+    dtype: bfloat16
+    attn_implementation: flash_attention_2
+    train_timestep_sampler: beta  # beta or uniform
+    freeze_vision: false
+    # The action expert consumes the VLM KV cache; HF checkpointing disables it.
+    gradient_checkpointing: false
+
+teacher:
+  factory: alpamayo1_5_distill.training.factory:build_teacher_model
+  kwargs:
+    name_or_path: nvidia/Alpamayo-1.5-10B
+    vlm_name_or_path: null
+    dtype: bfloat16
+    attn_implementation: flash_attention_2
+
+online_teacher:
+  top_k: -1  # -1 uses full-vocabulary dense KL; positive values use top-k + one residual tail bucket KL.
+  max_new_tokens: 256
+
+on_policy:
+  start_step: 60000  # warmup before enabling student rollouts.
+  ratio: 0.5  # student rollout ratio
+  divergence: forward_kl  # forward_kl, reverse_kl, or jsd
+  beta: 0.5  # Teacher mixture weight for jsd.
+  temperature: 1.0
+  sample_temperature: 0.6
+  sample_top_p: 0.98
+  kl_weight: 1.0
+
+loss:
+  ce_weight: 1.0
+  kd_weight: 1.0
+  hidden_weight: 0.0001
+  flow_weight: 2.0
+  teacher_vector_weight: 0.0
+  future_traj_vlm_weight: 1.0
+  temperature: 0.5
+  kd_scale_by_temperature_squared: false
+  kd_include_prompt: true  # Include valid prompt in logit KD.
+  hidden_include_prompt: true  # Include valid prompt in hidden KD.
+  ignore_index: -100
+  student_hidden_dim: 2048
+  teacher_hidden_dim: 4096
+
+optimizer:
+  lr: 2.1e-4
+  use_zero1: true
+  vlm_lr_scale: 0.5
+  betas: [0.9, 0.95]
+  eps: 1.0e-8
+  weight_decay: 0.01
+  vlm_weight_decay: 0.05
+
+scheduler:
+  name: cosine
+  warmup_steps: null
+  warmup_ratio: 0.1
+  min_lr: 1.0e-5
+  vlm_min_lr: 1.0e-6
+
+training:
+  output_dir: ./outputs/distill_am1.5_2b
+  epochs: 1
+  max_steps: 80000
+  gradient_accumulation_steps: 1
+  mixed_precision: bf16
+  max_grad_norm: 1.0
+  save_every_steps: 5000
+  log_every_steps: 10
+  resume_from: null
+  seed: 42
+
+validation:
+  enabled: true
+  seed: 42
+  every_steps: 2500
+  split: val
+  clip_allowlist_path: pkg://alpamayo1_5_distill/assets/clip_ids_eval_gold.txt
+  t0_us: 5100000
+  max_clip_retries: 0
+  compute_minade: true
+  stochastic_samples: 6
+  top_p: 0.98
+  temperature: 0.6
+  max_generation_length: 256
+  batch_size: 1
+  num_workers: 2
+  prefetch_factor: 4
+  persistent_workers: true
+  pin_memory: true
+  nav:
+    enabled: true
+    root: null  # Set when navigation labels are enabled.
+    cohort: gold644
+    clip_index_path: null
+    max_distance_m: -1
+    exclude_unknown: true
+
+evaluation:
+  checkpoint: null
+  mixed_precision: bf16
