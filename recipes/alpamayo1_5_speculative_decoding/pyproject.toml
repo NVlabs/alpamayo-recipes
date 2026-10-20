@@ -1,0 +1,71 @@
+[project]
+name = "alpamayo-speculative-decoding"
+version = "0.1.0"
+description = "Greedy CoC caching and online-prefill Domino/DFlash2 training"
+requires-python = "==3.12.*"
+dependencies = [
+  "alpamayo1_5==0.1.0",
+  "alpamayo-recipes",
+  "torch==2.8.0",
+  "torchvision==0.23.0",
+  "transformers==4.57.1",
+  "accelerate>=1.12.0",
+  "einops>=0.8.1",
+  "hydra-core>=1.3.2",
+  "hydra-colorlog>=1.2.0",
+  "numpy>=1.26",
+  "pillow>=12.0.0",
+  "safetensors>=0.5.0",
+  "scipy>=1.16",
+  "physical-ai-av==0.2.0",
+  "specforge==0.2.0",
+]
+
+[project.optional-dependencies]
+wandb = ["wandb>=0.25.0"]
+
+[project.scripts]
+alpamayo-specdec = "alpamayo1_5_speculative_decoding.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+# Like the other recipes, the recipe directory itself is the package; look one level up
+# (recipes/) so setuptools finds it.
+[tool.setuptools.packages.find]
+where = [".."]
+include = ["alpamayo1_5_speculative_decoding*"]
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.9"]
+
+[tool.uv.sources]
+alpamayo1_5 = { git = "https://github.com/NVlabs/alpamayo1.5.git", rev = "36aeb4c5938cbc2eb2aed33b22434773da4ab639" }
+specforge = { git = "https://github.com/sgl-project/SpecForge.git", rev = "bc5d8451aa5e7d30aa971dba93d1b7d0c61b83c1" }
+alpamayo-recipes = { path = "../../src", editable = true }
+
+# Use Alpamayo's inference/data modules. Plotting and FlashAttention are optional;
+# SDPA does not require a CUDA extension build during installation.
+[[tool.uv.dependency-metadata]]
+name = "alpamayo1_5"
+version = "0.1.0"
+requires-dist = ["accelerate>=1.12.0", "av>=16.0.1", "einops>=0.8.1", "hydra-colorlog>=1.2.0", "hydra-core>=1.3.2", "pandas>=2.3.3", "physical-ai-av==0.2.0", "pillow>=12.0.0", "torch==2.8.0", "torchvision>=0.23.0", "transformers==4.57.1"]
+
+# Only SpecForge's PyTorch draft/loss modules are used, not its SGLang servers
+# or training CLI. Keep their dependencies out of the Alpamayo environment.
+[[tool.uv.dependency-metadata]]
+name = "specforge"
+version = "0.2.0"
+requires-dist = ["torch", "transformers", "typing-extensions", "safetensors", "huggingface-hub"]
+
+[tool.ruff]
+line-length = 100
+extend-exclude = ["build"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["runtime: tiny tensor tests requiring the recipe's installed runtime"]
