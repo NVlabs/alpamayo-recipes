@@ -304,9 +304,3 @@ To be added.
 ## 10. Profiler: offline trace, down to modules and operators
 
 To be added.
-
----
-
-## Related reading
-- [01_Data_Loading.md](01_Data_Loading.md), [02_Transport_and_Step_Overheads.md](02_Transport_and_Step_Overheads.md), [03_Forward_Backward.md](03_Forward_Backward.md), [04_Parallelism_and_Memory.md](04_Parallelism_and_Memory.md): the segments diagnosed by the measurement methods in this chapter.
-- [06_Methodology.md](06_Methodology.md): how to prove that a gain measured here is real: same-window pairing, same-seed loss parity, bitwise-invariance gates, and so on.

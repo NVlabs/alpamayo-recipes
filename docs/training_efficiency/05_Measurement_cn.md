@@ -304,9 +304,3 @@ event 在 forward 前后、`loss.backward()` 前后各放一对。实现时需�
 ## 10. profiler: 离线 trace,细到模块和算子
 
 待补充。
-
----
-
-## 相关阅读
-- [01_Data_Loading.md](01_Data_Loading.md)、[02_Transport_and_Step_Overheads.md](02_Transport_and_Step_Overheads.md)、[03_Forward_Backward.md](03_Forward_Backward.md)、[04_Parallelism_and_Memory.md](04_Parallelism_and_Memory.md):本章的测量方法所诊断的各段。
-- [06_Methodology.md](06_Methodology.md):如何证明在这里测到的优化收益是真实的：同窗口配对、同 seed loss parity、逐位不变性门禁等。
