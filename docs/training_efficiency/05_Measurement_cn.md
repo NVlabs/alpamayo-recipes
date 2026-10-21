@@ -8,7 +8,7 @@
 - `MFU / HFU / OFU`: 看实际算力利用,不看设备利用率 (见第 4 项)
 
 **监控方法**:训练中的持续记录与回归监控,以及单独测量某一段的方法（第 6~10 项持续补充中）
-- 逐 rank 遥测: 记录每个 rank 的等待与计算,定位拖慢整体的 rank (见第 1 项)
+- 逐 rank 遥测与 `severe stall`: 记录每个 rank 的等待与计算,定位拖慢整体的 rank (见第 1 项)
 - CUDA event 分解: 把训练 step 拆成 `arrival` / `forward` / `backward` / `host residual` (见第 5 项)
 - 回归带: 定期跑固定配方,给 loss、训练 step 时间、MFU、显存设范围,超出就报警 (见第 6 项)
 - 取证: 出现非有限梯度时保存现场,不在健康训练 step 上加 collective (见第 7 项)
@@ -20,11 +20,11 @@
 
 | 症状 | 表现 | 看哪些指标 |
 |---|---|---|
-| 训练 step 慢于硬件预期，原因不明 | 设备利用率高、loss 正常、训练 step 长 | 真实 `wall clock / step`;`arrival`、`forward`、`backward`、`host residual` (详见第 2、5 项;细到模块和算子见第 10 项) |
-| 单个 rank 拖慢所有 rank | 均值远高于中位数;周期性的多秒训练 step | `arrival`(即 data wait)、`severe stall`、`stall gap`、`clean step` (详见第 1 项;单独量 loader 见第 8 项) |
-| 每个训练 step 都有固定的额外开销 | 均值接近中位数,且都高于对照 | `forward`、`backward`、`host residual` (详见第 5 项;细到算子见第 10 项) |
-| GPU 利用率接近 100%，但吞吐偏低 | 设备利用率高、功耗低 | `MFU`、`HFU`、`OFU`、`HFU / OFU`、功耗;不看设备利用率(`sm%`) (详见第 4 项) |
-| 汇报的数字与实际 GPU-hour 账单不一致 | iteration time 低于真实 wall;用中位数算成本 | 真实 `wall clock / step`、`GPU-hour`(用均值),对照 `iteration time` (详见第 2、3 项) |
+| 训练 step 慢于硬件预期，原因不明 | 设备利用率（`sm%`）高、loss 正常，但每个训练 step 的 `wall clock` 比硬件预期长 | 真实 `wall clock / step`;`arrival`、`forward`、`backward`、`host residual` (详见第 2、5 项;细到模块和算子见第 10 项) |
+| 单个 rank 拖慢所有 rank | 各训练 step 的 `wall clock` 均值远高于中位数；周期性出现多秒的训练 step，此时有的 rank 在等 batch，有的 rank 已在等梯度同步 | `arrival`(即 data wait)、`severe stall`、`stall gap`、`clean step` (详见第 1 项;单独量 loader 见第 8 项) |
+| 每个训练 step 都有固定的额外开销 | 各训练 step 的 `wall clock` 均值与中位数接近（没有长尾），但都高于对照配置：每个训练 step 都稳定地多花一段时间 | `forward`、`backward`、`host residual` (详见第 5 项;细到算子见第 10 项) |
+| GPU 利用率接近 100%，但吞吐偏低 | 设备利用率（`sm%`）接近 100%，但 `OFU` 很低、功耗接近空闲 | `MFU`、`HFU`、`OFU`、`HFU / OFU`、功耗;不看设备利用率(`sm%`) (详见第 4 项) |
+| 汇报的数字与实际 GPU-hour 账单不一致 | 日志里的 `iteration time` 低于真实 `wall clock`；或用中位数估算的成本，低于实际 `GPU-hour` 账单 | 真实 `wall clock / step`、`GPU-hour`(用均值),对照 `iteration time` (详见第 2、3 项) |
 
 ---
 
@@ -142,7 +142,7 @@ step_time = tot_s / tot_n                                   # 秒数之和 / 步
 
 ---
 
-## 3. `GPU-hour`: 成本估算指标。用 `wall clock` 均值算,不用中位数。
+## 3. `GPU-hour`: 用 `wall clock` 均值算,不用中位数
 
 **思路**:
 

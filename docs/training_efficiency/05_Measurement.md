@@ -3,12 +3,12 @@ The core efficiency metric is the GPU-hour cost of a training step (one training
 
 **Efficiency metrics**:
 - `severe stall`: the share of training steps in which one rank holds up all the others (arrival-time spread across ranks > 2 s); measures the waste caused by waiting for data (see item 1)
-- `wall clock`: the complete s/step computed from log timestamps (see item 2)
-- `GPU-hour`: computed from the mean `wall clock`, never the median (see item 3)
+- `wall clock`: compute the complete s/step from log timestamps (see item 2)
+- `GPU-hour`: compute it from the mean `wall clock`, never the median (see item 3)
 - `MFU / HFU / OFU`: look at actual compute utilization, not device utilization (see item 4)
 
 **Monitoring methods**: continuous recording and regression monitoring during training, plus ways to measure one segment in isolation (items 6–10 are still being added)
-- Per-rank telemetry: record each rank's wait and compute to locate the rank that slows everyone down (see item 1)
+- Per-rank telemetry and `severe stall`: record each rank's wait and compute to find the rank that slows everyone down (see item 1)
 - CUDA event decomposition: split a training step into `arrival` / `forward` / `backward` / `host residual` (see item 5)
 - Regression bands: periodically run a fixed recipe and set ranges for loss, training-step time, MFU and memory; alert when they are exceeded (see item 6)
 - Forensics: save the scene when a non-finite gradient appears, and never add a collective to a healthy training step (see item 7)
@@ -20,11 +20,11 @@ The core efficiency metric is the GPU-hour cost of a training step (one training
 
 | Symptom | What it looks like | Metrics to look at |
 |---|---|---|
-| Training step slower than the hardware suggests, cause unknown | High device utilization, normal loss, long training step | True `wall clock` / step; `arrival`, `forward`, `backward`, `host residual` (items 2 and 5; down to modules and operators in item 10) |
-| One rank slows down all ranks | Mean far above the median; periodic multi-second training steps | `arrival` (i.e. data wait), `severe stall`, `stall gap`, `clean step` (item 1; measure the loader alone in item 8) |
-| A fixed extra cost in every training step | Mean close to the median, both above the reference | `forward`, `backward`, `host residual` (item 5; down to operators in item 10) |
-| GPU utilization near 100% but throughput low | High device utilization, low power draw | `MFU`, `HFU`, `OFU`, `HFU / OFU`, power; not device utilization (`sm%`) (item 4) |
-| Reported numbers disagree with the actual GPU-hour bill | `iteration time` below the true wall; cost computed from the median | True `wall clock` / step, `GPU-hour` (from the mean), compared against `iteration time` (items 2 and 3) |
+| Training step slower than the hardware suggests, cause unknown | High device utilization (`sm%`) and normal loss, but the `wall clock` of each training step is longer than the hardware suggests | True `wall clock` / step; `arrival`, `forward`, `backward`, `host residual` (items 2 and 5; down to modules and operators in item 10) |
+| One rank slows down all ranks | The mean `wall clock` per training step is far above its median; periodic multi-second training steps, where some ranks are waiting for the batch while others are already waiting for gradient synchronization | `arrival` (i.e. data wait), `severe stall`, `stall gap`, `clean step` (item 1; measure the loader alone in item 8) |
+| A fixed extra cost in every training step | The mean `wall clock` per training step is close to its median (no long tail), but both are above the reference configuration: every training step reliably costs a fixed extra amount | `forward`, `backward`, `host residual` (item 5; down to operators in item 10) |
+| GPU utilization near 100% but throughput low | Device utilization (`sm%`) near 100%, but `OFU` is low and power draw is close to idle | `MFU`, `HFU`, `OFU`, `HFU / OFU`, power; not device utilization (`sm%`) (item 4) |
+| Reported numbers disagree with the actual GPU-hour bill | The logged `iteration time` is below the true `wall clock`; or a cost estimated from the median is below the actual `GPU-hour` bill | True `wall clock` / step, `GPU-hour` (from the mean), compared against `iteration time` (items 2 and 3) |
 
 ---
 
@@ -142,7 +142,7 @@ Two definitions on the same run (2B model, stage 1, 16 nodes, 100k-step referenc
 
 ---
 
-## 3. `GPU-hour`: a cost metric. Compute it from the mean `wall clock`, never the median
+## 3. `GPU-hour`: compute it from the mean `wall clock`, never the median
 
 **Idea**:
 
