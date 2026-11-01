@@ -86,6 +86,7 @@ def train(config: DictConfig) -> None:
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         data_collator=collator,
+        processing_class=collator.data_processor.processor,
         callbacks=callbacks,
     )
     if training_args.deepspeed is not None:
