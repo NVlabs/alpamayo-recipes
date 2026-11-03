@@ -64,7 +64,7 @@ sev  = sum(1 for r in sel
 
 **Experiment data**: (internal data, for reference)
 
-Setup: 2B model, 16 nodes / 128 GPUs, 1,000-step benchmark; the metric is the `instrument wall` from per-rank telemetry (steps 21~1,000), and severe uses the "arrival spread > 2 s" definition. The table shows two stage 2 configurations of the same model on the same data. Per-rank telemetry alone is enough to tell which kind of problem each one has:
+Setup: 2B model, 16 nodes / 128 GPUs, 1,000-step benchmark; the metric is the `instrument wall` from per-rank telemetry (steps 21–1,000), and severe uses the "arrival spread > 2 s" definition. The table shows two stage 2 configurations of the same model on the same data. Per-rank telemetry alone is enough to tell which kind of problem each one has:
 
 | Configuration | `instrument wall` mean (s) | `instrument wall` median (s) | `severe stall` ratio | `arrival` p95 (s) | Verdict |
 |---|---:|---:|---:|---:|---|
@@ -74,7 +74,7 @@ Setup: 2B model, 16 nodes / 128 GPUs, 1,000-step benchmark; the metric is the `i
 Notes:
 - Tables in this chapter use the `severe stall` definition (arrival spread across ranks > 2 s). Other material may use an `absolute stall` definition (slowest rank's wait > 5 s); state which one is used.
 - Limitation of the difference-based `severe stall`: when all ranks wait for data at the same time, the arrival spread is small and `severe stall` cannot detect it. For example, one experiment had a mean of 7.32 s/step but only 2.3% of training steps were classified as `severe stall`, because all ranks were waiting simultaneously. Read the mean, the median and the arrival spread together; the `absolute stall` definition (slowest rank waits > 5 s) can be used as a complement to cover this case.
-- The mean `instrument wall` does not equal the mean true `wall clock`: `instrument wall` excludes the inter-step tail (the time between the previous step's optimizer end and the next step's start, including the wait for the next batch and host-side work), so it is smaller than the true `wall clock` based on trainer-log timestamps by tens of milliseconds (see item 2). In addition, the first ~20 training steps include compile and first-epoch effects and should be dropped from the statistics.
+- The mean `instrument wall` does not equal the mean true `wall clock`: `instrument wall` excludes the inter-step tail (the time between the previous step's optimizer end and the next step's start, including the wait for the next batch and host-side work), so it is smaller than the true `wall clock` based on trainer-log timestamps by tens of milliseconds (see item 2). In addition, the first 20 or so training steps include compile and first-epoch effects and should be dropped from the statistics.
 
 **When to use**: all training jobs; recommended on by default. The cost is one JSON row per training step; afterwards, questions like "where does the time go" can be answered by a single query over existing data.
 
@@ -100,7 +100,7 @@ A long training job is usually a chain of scheduler allocations: when an allocat
 
 Follow these rules when implementing it:
 - **Never subtract timestamps across segments**: the gap between segments (queueing, restart, checkpoint loading and warm-up) is not training-step time.
-- **Count rerun training steps in both segments**: after a job resumes it retrains from the latest checkpoint. For example, if it is requeued at step 9,400 and resumes from the step-9,000 checkpoint, steps 9,001~9,400 run once in each segment. The time spent on the rerun is real training cost and must be counted; counting both runs makes the computed training-step time reflect the actual training rate.
+- **Count rerun training steps in both segments**: after a job resumes it retrains from the latest checkpoint. For example, if it is requeued at step 9,400 and resumes from the step-9,000 checkpoint, steps 9,001–9,400 run once in each segment. The time spent on the rerun is real training cost and must be counted; counting both runs makes the computed training-step time reflect the actual training rate.
 - **State the statistics window**: the whole run, or the last 1,000 steps. Everything that happens inside the window (checkpointing, evaluation pauses, etc.) is counted; a window that is too short makes the result noisy, so use at least a few hundred training steps.
 - **Use the same definition for the baseline and the new result**: when quoting the gain of a change over a baseline, recompute the baseline from the true `wall clock`; for historical data whose logs are gone and cannot be recomputed, state the original definition. If the baseline comes from the trainer log's `iteration time`, the resulting speedup is only a lower bound of the true gain.
 - **Regression tests versus cost accounting**: a regression test (see item 6) may set its band on the median or on `iteration time` for stability, but cost accounting should still use the mean `wall clock`.
@@ -177,7 +177,7 @@ Background: while optimizing the dataloader, we found that besides `arrival` (wa
 
 Purpose: find which segment holds the bottleneck from the decomposition, and thereby decide the optimization direction.
 
-Setup: 2B model, stage 2, 16 nodes, 1,000-step benchmark; each segment is the median on the rank that determines the step duration (per-rank telemetry, steps 21~1,000), in seconds. The two configurations are the same as in item 1:
+Setup: 2B model, stage 2, 16 nodes, 1,000-step benchmark; each segment is the median on the rank that determines the step duration (per-rank telemetry, steps 21–1,000), in seconds. The two configurations are the same as in item 1:
 
 | Configuration | `arrival-else` | `forward` | `backward` | `host residual` |
 |---|---:|---:|---:|---:|
@@ -230,7 +230,7 @@ Setup: for a 2B model, `GPU-hour` and end-to-end time per 100k steps computed by
 
 **Idea**:
 
-![Dumbbell chart for two runs: device utilization is 62%~100% while OFU is only 0~14%; the pure-spin run reads about 100% utilization at idle power with OFU about 0%.](assets/05_mfu_hfu_and_ofu_versus_device_utilization.png)
+![Dumbbell chart for two runs: device utilization is 62%–100% while OFU is only 0–14%; the pure-spin run reads about 100% utilization at idle power with OFU about 0%.](assets/05_mfu_hfu_and_ofu_versus_device_utilization.png)
 
 The "utilization" reported by device monitoring (`sm%` in `nvidia-smi`) is **occupancy**: the fraction of the sampling period during which any kernel was resident on the device. It does not reflect how much of the hardware peak the resident work uses; a spin kernel (a kernel that does no useful compute and only occupies the GPU, such as `torch.cuda._sleep`) reads about 100% even at idle power. The following three metrics tie "actual work efficiency" to "hardware peak capability":
 - `MFU` (model FLOP utilization): the useful floating-point work the model needs per training step, divided by time and the hardware peak. The work is estimated with the 6N convention (forward + backward cost about 6×N operations per token, N being the parameter count). The hardware peak comes in a sparse and a dense flavor; only an `MFU` computed against the dense peak is comparable with MFU in the published literature.
@@ -303,7 +303,7 @@ Baseline experiment: 2B model, stage 1, 16 nodes, global batch 512.
 | dense `HFU / OFU` | 1.499 | ≤ 1.80 |
 
 Notes:
-- Why the band on `iteration time` uses the median: on variable multimodal shapes, recompiles hit fewer than 0.5% of training steps but cost 10~575 s each. On a 10k-step run the mean was 3.646 s and the p95 2.40 s, while the median was 2.005 s; across two identical 3,000-step runs the p95 swung between 2.40 and 4.01 s while the median held at 2.00~2.01 s. The median is therefore the stable criterion, while the mean is still used for cost (see item 4).
+- Why the band on `iteration time` uses the median: on variable multimodal shapes, recompiles hit fewer than 0.5% of training steps but cost 10–575 s each. On a 10k-step run the mean was 3.646 s and the p95 2.40 s, while the median was 2.005 s; across two identical 3,000-step runs the p95 swung between 2.40 and 4.01 s while the median held at 2.00–2.01 s. The median is therefore the stable criterion, while the mean is still used for cost (see item 4).
 
 **When to use**: after every change that touches the trainer, the dataloader, the kernels or the environment, run these two experiments periodically at the production topology to keep the training system stable and efficient.
 
@@ -313,7 +313,7 @@ Notes:
 
 **Idea**:
 
-![Flow schematic: forward / backward feeds a gradient-norm guard with a rank-local forensics hook. A finite gradient goes on to the optimizer step, with a training-step time of 3.1301 s vs 3.1302 s with forensics on vs off; a non-finite gradient branches to an orange "before" row (silent skips, about 21,000 skipped training steps, old checkpoints deleted automatically, the last clean state gone, the run cannot be resumed) or a blue "after" row (save the batch and the clean weights / optimizer shards, barrier 33~44 s against the 600 s communication timeout; stop after 5 in a row; offline replay names the first non-finite module).](assets/05_forensics_without_collectives.png)
+![Flow schematic: forward / backward feeds a gradient-norm guard with a rank-local forensics hook. A finite gradient goes on to the optimizer step, with a training-step time of 3.1301 s vs 3.1302 s with forensics on vs off; a non-finite gradient branches to an orange "before" row (silent skips, about 21,000 skipped training steps, old checkpoints deleted automatically, the last clean state gone, the run cannot be resumed) or a blue "after" row (save the batch and the clean weights / optimizer shards, barrier 33–44 s against the 600 s communication timeout; stop after 5 in a row; offline replay names the first non-finite module).](assets/05_forensics_without_collectives.png)
 
 When a non-finite gradient (NaN / inf) appears, the existing gradient-norm guard only skips that optimizer step and keeps training, and it leaves behind neither the offending batch nor the weights. If the problem persists, the steps are silently skipped one after another (about 21,000 on a 32B run); meanwhile only the last few checkpoints are kept and older ones are deleted automatically, so the last clean checkpoint from before the problem is deleted too, the run cannot be resumed, and the offending batch was never saved, leaving no way to find the cause.
 The idea is to save the scene at the moment the guard fires (the offending batch and the still-clean weights and optimizer state) for offline reproduction and root-cause diagnosis, while healthy training steps only do checks that are local to each rank and add no synchronization communication between ranks.
@@ -417,13 +417,13 @@ The table below validates the forensics mechanism: the overhead on the healthy p
 |---|---|---|
 | Extra overhead | Does it affect the `iteration time` of healthy training steps, forensics on vs off | Mean 3.1301 s vs 3.1302 s (0.00%); medians within 0.03% |
 | Extra overhead | Healthy training steps with the compile bundle on, forensics on vs off | Mean −0.02%, within run jitter |
-| Extra overhead | Time to save when a NaN / Inf occurs | 32B model, 8 nodes: 33~44 s end to end |
+| Extra overhead | Time to save when a NaN / Inf occurs | 32B model, 8 nodes: 33–44 s end to end |
 | Evidence usability | replay forward fidelity | The replay loss matches the recorded value digit for digit |
 | Evidence usability | replay reproduces and localizes | Reproduced the NaN on the rank that owns the batch and localized the first module that outputs a non-finite value |
 
 Notes:
 - Saving the scene is best-effort: when a rank fails to save (disk quota, a filesystem hiccup), it only logs the failure and does not interrupt the flow, so that all ranks can still reach the synchronization point and the stop logic.
-- Spike warning: besides non-finite gradients (NaN / inf), a gradient norm that is finite but exceeds a multiple of the trailing median (a spike) also triggers a save, because it may be a precursor of a NaN, and what is saved is the state before the NaN occurred. A spike only saves the scene; it neither skips nor stops training. One capture is made per run of consecutive spikes, at most 2 per job attempt, and nothing triggers during the first 20 finite training steps (gradient norms are naturally large during warm-up). The threshold must be calibrated per model and stage: during a healthy 32B warm-up the gradient norm reached up to 21~23 times the trailing median (2.5~4 times on 2B and 8B runs), a threshold of 20 times false-fired and wasted the capture budget, while a threshold of 100 times did not false-fire.
+- Spike warning: besides non-finite gradients (NaN / inf), a gradient norm that is finite but exceeds a multiple of the trailing median (a spike) also triggers a save, because it may be a precursor of a NaN, and what is saved is the state before the NaN occurred. A spike only saves the scene; it neither skips nor stops training. One capture is made per run of consecutive spikes, at most 2 per job attempt, and nothing triggers during the first 20 finite training steps (gradient norms are naturally large during warm-up). The threshold must be calibrated per model and stage: during a healthy 32B warm-up the gradient norm reached up to 21–23 times the trailing median (2.5–4 times on 2B and 8B runs), a threshold of 20 times false-fired and wasted the capture budget, while a threshold of 100 times did not false-fire.
 
 **When to use**: after a NaN / inf gradient appears it is hard to reproduce, so deploy the forensics mechanism in advance and save the scene on the spot when it happens.
 

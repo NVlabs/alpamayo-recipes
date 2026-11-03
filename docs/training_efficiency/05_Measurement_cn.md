@@ -1,16 +1,16 @@
 ## Summary
 本章介绍训练效率的测量与评估方法，按使用顺序分为三部分：怎么量、怎么拆（先找出时间花在哪里），怎么算成本和利用率，以及持续监控与辅助方法；最后是问题定位（按症状找到瓶颈点）。各条后面的编号对应正文的小节。
 
-**怎么量、怎么拆**:先找出时间花在哪里（第 1~3 项）
+**怎么量、怎么拆**:先找出时间花在哪里（第 1–3 项）
 - 逐 rank 遥测与 `severe stall`: 记录每个 rank 的等待与计算,定位拖慢整体的 rank (见第 1 项)
 - `wall clock`: 从日志时间戳算完整的 s/step (见第 2 项)
 - CUDA event 分解: 把训练 step 拆成 `arrival` / `forward` / `backward` / `host residual` (见第 3 项)
 
-**怎么算成本和利用率**:按 `wall clock` 算成本，按实际算力看利用率（第 4~5 项）
+**怎么算成本和利用率**:按 `wall clock` 算成本，按实际算力看利用率（第 4–5 项）
 - `GPU-hour`: 用 `wall clock` 均值算,不用中位数 (见第 4 项)
 - `MFU / HFU / OFU`: 看实际算力利用,不看设备利用率 (见第 5 项)
 
-**持续监控与辅助方法**:训练中的持续记录与回归监控,以及单独测量某一段的方法（第 6~10 项）
+**持续监控与辅助方法**:训练中的持续记录与回归监控,以及单独测量某一段的方法（第 6–10 项）
 - 回归测试: 代码改动后定期跑固定配方,与基线阈值（带）对比,超出就报警 (见第 6 项)
 - NaN / inf 梯度取证: 出现时保存现场用于复现和定位,平时不拖慢训练 (见第 7 项)
 - dataloader harness: 跳过 compute 单独计算 dataloader 耗时,并把启动时间拆到各阶段 (见第 8 项)
@@ -64,7 +64,7 @@ sev  = sum(1 for r in sel
 
 **实验数据**:(内部数据供参考)
 
-实验设置：2B 模型，16 节点 / 128 GPU，1,000 步 benchmark；口径为逐 rank 遥测的 `instrument wall`（step 21~1,000），severe 采用“到达时间差 > 2 s”的定义。下表是同一模型、同样数据下的两种配置，仅依据逐 rank 遥测的指标，即可判断各自属于哪一类问题瓶颈：
+实验设置：2B 模型，16 节点 / 128 GPU，1,000 步 benchmark；口径为逐 rank 遥测的 `instrument wall`（step 21–1,000），severe 采用“到达时间差 > 2 s”的定义。下表是同一模型、同样数据下的两种配置，仅依据逐 rank 遥测的指标，即可判断各自属于哪一类问题瓶颈：
 
 | 配置 | `instrument wall` 均值 (s) | `instrument wall` 中位数 (s) | `severe stall` 比例 | `arrival` p95 (s) | 判断 |
 |---|---:|---:|---:|---:|---|
@@ -100,7 +100,7 @@ Trainer 在每个训练 step 打印一个 `iteration time`。它测量的是 ran
 
 实现时需遵守以下规则：
 - **不跨 segment 相减时间戳**：segment 之间的间隔（排队、重启、checkpoint 加载和 warm-up）不是训练 step 时间。
-- **重跑的训练 step 在两个 segment 中都要计数**：任务恢复后会从最近的 checkpoint 重新训练。例如在第 9,400 步被重新排队、从第 9,000 步的 checkpoint 恢复，则第 9,001~9,400 步会在两个 segment 中各跑一次。重跑所消耗的时间是真实发生的训练开销，应一并计入；两次均计入，才能使计算出的训练 step 时间反映实际的训练速率。
+- **重跑的训练 step 在两个 segment 中都要计数**：任务恢复后会从最近的 checkpoint 重新训练。例如在第 9,400 步被重新排队、从第 9,000 步的 checkpoint 恢复，则第 9,001–9,400 步会在两个 segment 中各跑一次。重跑所消耗的时间是真实发生的训练开销，应一并计入；两次均计入，才能使计算出的训练 step 时间反映实际的训练速率。
 - **注明统计窗口**：整个 run，或最后 1,000 步。窗口内发生的一切（checkpoint、评测暂停等）都会被计入，窗口过短会使结果波动较大，建议至少使用几百个训练 step。
 - **基线与新结果使用同一口径**：引用某个改动相对基线的收益时，基线应按真实 `wall clock` 重新计算；日志已丢失、无法重算的历史数据，应注明其原口径。若基线取自 trainer 日志的 `iteration time`，则得到的加速比只是真实收益的下界。
 - **回归测试与成本核算**：回归测试（见第 6 项）可出于稳定性对中位数或 `iteration time` 设带，成本核算仍应使用 `wall clock` 的均值。
@@ -177,7 +177,7 @@ event 在 forward 前后、`loss.backward()` 前后各放一对。实现时需�
 
 实验目的：通过拆解判断瓶颈在哪一段，从而确定优化方向。
 
-实验设置：2B 模型 stage 2，16 节点，1,000 步 benchmark；各段取决定训练 step 时长的那个 rank 上的中位数（逐 rank 遥测，step 21~1,000），单位为秒。两种配置与第 1 项相同：
+实验设置：2B 模型 stage 2，16 节点，1,000 步 benchmark；各段取决定训练 step 时长的那个 rank 上的中位数（逐 rank 遥测，step 21–1,000），单位为秒。两种配置与第 1 项相同：
 
 | 配置 | `arrival-else` | `forward` | `backward` | `host residual` |
 |---|---:|---:|---:|---:|
@@ -230,7 +230,7 @@ e2e_days_per_100k  = mean_wall_s_per_step * 100_000 / 86_400
 
 **思路**:
 
-![两个 run 的哑铃图：设备利用率为 62%~100%，而 OFU 仅为 0~14%；纯空转（spin）的 run 在空闲功耗下读到约 100% 的利用率，OFU 约为 0%。](assets/05_mfu_hfu_and_ofu_versus_device_utilization.png)
+![两个 run 的哑铃图：设备利用率为 62%–100%，而 OFU 仅为 0–14%；纯空转（spin）的 run 在空闲功耗下读到约 100% 的利用率，OFU 约为 0%。](assets/05_mfu_hfu_and_ofu_versus_device_utilization.png)
 
 设备监控给出的“利用率”（`nvidia-smi` 的 `sm%`）是**占用率**：采样周期内有任意 kernel 驻留在设备上的比例。它不反映驻留的工作用了多少硬件峰值，一个空转的 kernel（不做有用计算、只占用 GPU 的 kernel，如 `torch.cuda._sleep`）在空闲功耗下也会读到约 100%。以下三个指标把“实际工作效率”与“硬件峰值能力”联系起来：
 - `MFU`（model FLOP utilization）：模型每个训练 step 需要的有用浮点运算量，除以耗时和硬件峰值。运算量按 6N 约定估算（forward + backward 每个 token 约 6×N 次运算，N 为参数量）。硬件峰值有带稀疏和稠密（dense）两种口径，只有以稠密峰值计算的 `MFU` 可与公开文献中的 MFU 比较。
@@ -303,7 +303,7 @@ def flop_utilization(params, tokens_per_step, step_time_s, peak_flops_per_gpu, n
 | dense `HFU / OFU` | 1.499 | ≤ 1.80 |
 
 说明：
-- 对 `iteration time` 设中位数的带：在可变多模态 shape 上，recompile 只发生在不到 0.5% 的训练 step，但每次耗时 10~575 s。10k 步 run 上均值为 3.646 s、p95 为 2.40 s，而中位数为 2.005 s；两个相同的 3,000 步 run 之间，p95 在 2.40~4.01 s 之间波动，中位数则稳定在 2.00~2.01 s。因此中位数是稳定的判据，均值仍用于成本（见第 4 项）。
+- 对 `iteration time` 设中位数的带：在可变多模态 shape 上，recompile 只发生在不到 0.5% 的训练 step，但每次耗时 10–575 s。10k 步 run 上均值为 3.646 s、p95 为 2.40 s，而中位数为 2.005 s；两个相同的 3,000 步 run 之间，p95 在 2.40–4.01 s 之间波动，中位数则稳定在 2.00–2.01 s。因此中位数是稳定的判据，均值仍用于成本（见第 4 项）。
 
 **适用场景**：在每次涉及 trainer、dataloader、kernel 或环境的变更合入之后，按生产的 topology 定期跑这两个实验，保证训练系统的稳定性和效率。
 
@@ -313,7 +313,7 @@ def flop_utilization(params, tokens_per_step, step_time_s, peak_flops_per_gpu, n
 
 **思路**:
 
-![流程示意：forward / backward 进入梯度范数 guard（带 rank 本地的取证 hook）。梯度有限则进入 optimizer step，取证开 / 关的训练 step 时间为 3.1301 s 与 3.1302 s；梯度非有限则分叉成橙色“改动前”（静默跳过，约 21,000 个被跳过的训练 step，旧的 checkpoint 被自动删除，最后一份干净状态也没了，run 无法接着训练）或蓝色“改动后”（保存 batch 和干净的权重 / optimizer 分片，barrier 33~44 s，对 600 s 通信超时上限；连续 5 次后停止，离线 replay 点名第一个非有限的模块）。](assets/05_forensics_without_collectives.png)
+![流程示意：forward / backward 进入梯度范数 guard（带 rank 本地的取证 hook）。梯度有限则进入 optimizer step，取证开 / 关的训练 step 时间为 3.1301 s 与 3.1302 s；梯度非有限则分叉成橙色“改动前”（静默跳过，约 21,000 个被跳过的训练 step，旧的 checkpoint 被自动删除，最后一份干净状态也没了，run 无法接着训练）或蓝色“改动后”（保存 batch 和干净的权重 / optimizer 分片，barrier 33–44 s，对 600 s 通信超时上限；连续 5 次后停止，离线 replay 点名第一个非有限的模块）。](assets/05_forensics_without_collectives.png)
 
 训练出现非有限梯度（NaN / inf）时，原有的梯度范数 guard 只会跳过这次 optimizer step 并继续训练，不留下出事的 batch 和权重。问题持续时，step 会被静默地一直跳过（在一个 32B run 上约 21,000 个），同时，checkpoint 只保留最近几份，旧的会被自动删除，出问题之前最后一份干净的 checkpoint 也被删掉了，run 无法接着训练；出事的 batch 也没有保存下来，原因无从查起。
 思路是在 guard 触发的当下保存现场（出事的 batch、仍然干净的权重和 optimizer 状态），供离线复现和定位根因；同时，健康的训练 step 上只做各 rank 本地的检查，不增加 rank 之间的同步通信。
@@ -415,13 +415,13 @@ for backend in (SDPBackend.CUDNN_ATTENTION, SDPBackend.MATH):
 |---|---|---|
 | 额外开销验证 | 是否对健康训练 step 的 `iteration time` 有影响，取证开 vs 关 | 均值 3.1301 s vs 3.1302 s（0.00%）；中位数相差 < 0.03% |
 | 额外开销验证 | 是否对健康训练 step，开 compile bundle 时的开 / 关 | 均值 −0.02%，在 run 抖动之内 |
-| 额外开销验证 | 出现 NaN/Inf 问题时保存耗时 | 32B 模型，8 节点：端到端 33~44 s |
+| 额外开销验证 | 出现 NaN/Inf 问题时保存耗时 | 32B 模型，8 节点：端到端 33–44 s |
 | 证据可用性验证 | replay 的 forward 保真度 | replay 的 loss 与记录值逐位一致 |
 | 证据可用性验证 | replay 复现并定位 | 在拥有该 batch 的 rank 上复现了 NaN，并定位到最先输出非有限值的模块 |
 
 说明：
 - 现场保存是尽力而为：某个 rank 保存失败（磁盘配额、文件系统抖动）时只记录日志，不中断流程，让所有 rank 都能走到同步点和停止逻辑。
-- 尖峰预警：除了非有限梯度（NaN / inf）要保存现场，梯度范数虽然有限、但超过近期中位数一定倍数（尖峰）时也要保存，因为它可能是 NaN 的前兆，保存的是 NaN 发生之前的状态。尖峰只保存现场，不跳过也不停止训练；一段连续的尖峰只保存一次，每次 job attempt 最多 2 次，前 20 个有限训练 step 不触发（warm-up 期间梯度范数本来就大）。阈值需要按模型和阶段校准：健康的 32B warm-up 中，梯度范数最高达到近期中位数的 21~23 倍（2B 和 8B 的 run 上为 2.5~4 倍），阈值设为 20 倍会误报、白白用掉捕获预算，设为 100 倍则没有误报。
+- 尖峰预警：除了非有限梯度（NaN / inf）要保存现场，梯度范数虽然有限、但超过近期中位数一定倍数（尖峰）时也要保存，因为它可能是 NaN 的前兆，保存的是 NaN 发生之前的状态。尖峰只保存现场，不跳过也不停止训练；一段连续的尖峰只保存一次，每次 job attempt 最多 2 次，前 20 个有限训练 step 不触发（warm-up 期间梯度范数本来就大）。阈值需要按模型和阶段校准：健康的 32B warm-up 中，梯度范数最高达到近期中位数的 21–23 倍（2B 和 8B 的 run 上为 2.5–4 倍），阈值设为 20 倍会误报、白白用掉捕获预算，设为 100 倍则没有误报。
 
 **适用场景**：NaN / inf 梯度出现后很难复现，提前部署取证机制，出现时当场保存现场。
 
