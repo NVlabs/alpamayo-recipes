@@ -587,4 +587,3 @@ if config.enable_profiler:
 根据 trace 定位并修复了两处算子开销（未 pin 的 H2D 拷贝、一次 `torch.linalg.solve` 调用），两处修复合计，每个训练 step 回收约 140 ms。
 
 **适用场景**：已经定位到训练 step 的某一段偏慢，需要进一步归因到具体的模块或算子时。
-
