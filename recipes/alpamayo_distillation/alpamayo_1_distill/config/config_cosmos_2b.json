@@ -1,0 +1,121 @@
+{
+  "action_in_proj_cfg": {
+    "_target_": "alpamayo1_distill.models.action_in_proj.PerWaypointActionInProjV2",
+    "hidden_size": 512,
+    "max_freq": 100.0,
+    "num_enc_layers": 2,
+    "num_fourier_feats": 20
+  },
+  "action_out_proj_cfg": {
+    "_target_": "torch.nn.Linear"
+  },
+  "action_space_cfg": {
+    "_target_": "alpamayo1_distill.action_space.UnicycleAccelCurvatureActionSpace",
+    "a_lambda": 0.0001,
+    "a_ridge": 0.0001,
+    "accel_bounds": [
+      -9.8,
+      9.8
+    ],
+    "accel_mean": 0.02902694707164455,
+    "accel_std": 0.6810426736454882,
+    "curvature_bounds": [
+      -0.33,
+      0.33
+    ],
+    "curvature_mean": 0.0002692167976330542,
+    "curvature_std": 0.026148280660833106,
+    "dt": 0.1,
+    "kappa_lambda": 0.0001,
+    "kappa_ridge": 0.0001,
+    "n_waypoints": 64,
+    "theta_lambda": 1e-06,
+    "theta_ridge": 1e-08,
+    "v_lambda": 1e-06,
+    "v_ridge": 0.0001
+  },
+  "add_special_tokens": true,
+  "architectures": [
+    "ExpertModelDistill"
+  ],
+  "attn_implementation": "flash_attention_2",
+  "diffusion_cfg": {
+    "_target_": "alpamayo1_distill.diffusion.flow_matching.FlowMatching",
+    "int_method": "euler",
+    "x_dims": "???"
+  },
+  "dtype": "bfloat16",
+  "expert_cfg": {
+    "dtype": "bfloat16",
+    "head_dim": 128,
+    "hidden_size": 384,
+    "intermediate_size": 1536,
+    "num_attention_heads": 16,
+    "num_hidden_layers": 28,
+    "num_key_value_heads": 8
+  },
+  "expert_non_causal_attention": true,
+  "hist_traj_tokenizer_cfg": {
+    "_target_": "alpamayo1_distill.models.delta_tokenizer.DeltaTrajectoryTokenizer"
+  },
+  "keep_same_dtype": true,
+  "max_pixels": 196608,
+  "min_pixels": 163840,
+  "model_dtype": "bfloat16",
+  "model_type": "alpamayo_reasoning_vla_expert_distill",
+  "reasoning_max_generation_length": 256,
+  "vlm_name_or_path": "nvidia/Cosmos-Reason2-2B",
+  "tokens_per_future_traj": 128,
+  "tokens_per_history_traj": 48,
+  "traj_token_ids": {
+    "future": 155685,
+    "future_end": 155683,
+    "future_start": 155681,
+    "history": 155684,
+    "history_end": 155676,
+    "history_start": 155674
+  },
+  "traj_token_start_idx": 151669,
+  "traj_tokenizer_cfg": {
+    "_recursive_": false,
+    "_target_": "alpamayo1_distill.action_space.discrete_action_space.DiscreteTrajectoryTokenizer",
+    "action_space_cfg": {
+      "_target_": "alpamayo1_distill.action_space.UnicycleAccelCurvatureActionSpace",
+      "a_lambda": 0.0001,
+      "a_ridge": 0.0001,
+      "accel_bounds": [
+        -9.8,
+        9.8
+      ],
+      "accel_mean": 0.02902694707164455,
+      "accel_std": 0.6810426736454882,
+      "curvature_bounds": [
+        -0.33,
+        0.33
+      ],
+      "curvature_mean": 0.0002692167976330542,
+      "curvature_std": 0.026148280660833106,
+      "dt": 0.1,
+      "kappa_lambda": 0.0001,
+      "kappa_ridge": 0.0001,
+      "n_waypoints": 64,
+      "theta_lambda": 1e-06,
+      "theta_ridge": 1e-08,
+      "v_lambda": 1e-06,
+      "v_ridge": 0.0001
+    },
+    "dims_max": [
+      10,
+      10
+    ],
+    "dims_min": [
+      -10,
+      -10
+    ],
+    "num_bins": 3000
+  },
+  "traj_vocab_size": 4000,
+  "transformers_version": "4.57.1",
+  "vlm_backend": "qwenvl3",
+  "vocab_size": 155697
+}

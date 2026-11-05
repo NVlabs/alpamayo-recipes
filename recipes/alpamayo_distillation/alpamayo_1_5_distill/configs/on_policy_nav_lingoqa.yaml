@@ -1,0 +1,180 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# Alpamayo 1.5 2B distillation with navigation-conditioned trajectory training
+# and a task-homogeneous LingoQA VQA stream. Dataset roots are supplied at launch.
+data:
+  # Required. Override with the local PhysicalAI-AV dataset root.
+  local_dir: null
+  split: train
+  t0_us: 5100000
+  t0_us_list: [3600000, 5100000, 7000000, 9000000, 12000000]
+  random_t0: true
+  samples_per_clip: 1
+  t0_margin_us: 0
+  max_clip_retries: 8
+  # Gold clips can be labeled train in the source index; always exclude them.
+  exclude_clip_ids_path: pkg://alpamayo1_5_distill/assets/clip_ids_eval_gold.txt
+  batch_size: 1
+  shuffle: true
+  num_workers: 8
+  prefetch_factor: 4
+  persistent_workers: true
+  pin_memory: true
+
+  # Use an equal base/navigation trajectory mixture through the
+  # base branch's explicit-mixture API.
+  mixture:
+    enabled: true
+    basic_ratio: 0.5
+    nav_ratio: 0.5
+    nav_t0_retries: 3
+    nav_sample_retries: 3
+    fallback_nav_to_basic: true
+
+  # The sampler preserves task-homogeneous batches. Exposure is proportional
+  # to weight * dataset length, matching the original LingoQA integration.
+  lingoqa:
+    enabled: true
+    # Required when enabled. Point this at the directory containing train.parquet.
+    data_root: null
+    parquet_name: train.parquet
+    # null preserves all five public LingoQA benchmark frames.
+    n_frames: null
+    weight: 1
+    # Four trajectory traversals per VQA-budget traversal gives an approximately
+    # 80:20 trajectory-to-VQA step ratio when clips without nav labels are kept.
+    pai_weight: 4
+    max_new_tokens: 128
+
+  # Each VQA slot independently chooses PAI with this probability; otherwise
+  # it chooses LingoQA. PAI answers come from the frozen Alpamayo 1.5 teacher.
+  pai_vqa:
+    enabled: true
+    probability: 0.3
+    questions: null  # Use alpamayo1_5_distill/training/pai_vqa_questions.py.
+    teacher_top_p: 0.98
+    teacher_temperature: 0.6
+    max_new_tokens: 512
+
+  nav:
+    enabled: true
+    # Required when navigation training is enabled.
+    root: null
+    cohort: train
+    clip_index_path: null
+    max_distance_m: -1
+    exclude_unknown: true
+
+model:
+  factory: alpamayo1_5_distill.training.factory:build_student_model
+  kwargs:
+    teacher_name_or_path: nvidia/Alpamayo-1.5-10B
+    # Leave null to use the VLM reference stored in the teacher checkpoint.
+    teacher_vlm_name_or_path: null
+    student_vlm_name_or_path: nvidia/Cosmos-Reason2-2B
+    dtype: bfloat16
+    attn_implementation: flash_attention_2
+    train_timestep_sampler: beta
+    freeze_vision: false
+    # The action expert consumes the VLM KV cache; HF checkpointing disables it.
+    gradient_checkpointing: false
+
+teacher:
+  factory: alpamayo1_5_distill.training.factory:build_teacher_model
+  kwargs:
+    name_or_path: nvidia/Alpamayo-1.5-10B
+    # Optional local override when the teacher VLM is stored separately.
+    vlm_name_or_path: null
+    dtype: bfloat16
+    attn_implementation: flash_attention_2
+
+online_teacher:
+  top_k: -1
+  max_new_tokens: 256
+
+on_policy:
+  start_step: 75000
+  ratio: 0.5
+  divergence: forward_kl
+  beta: 0.5
+  temperature: 1.0
+  sample_temperature: 0.6
+  sample_top_p: 0.98
+  kl_weight: 1.0
+
+loss:
+  ce_weight: 1.0
+  kd_weight: 1.0
+  hidden_weight: 0.0001
+  flow_weight: 2.0
+  teacher_vector_weight: 0.0
+  future_traj_vlm_weight: 1.0
+  temperature: 0.5
+  kd_scale_by_temperature_squared: false
+  kd_include_prompt: true
+  hidden_include_prompt: true
+  ignore_index: -100
+  student_hidden_dim: 2048
+  teacher_hidden_dim: 4096
+
+optimizer:
+  lr: 2.1e-4
+  use_zero1: true
+  vlm_lr_scale: 0.5
+  betas: [0.9, 0.95]
+  eps: 1.0e-8
+  weight_decay: 0.01
+  vlm_weight_decay: 0.05
+
+scheduler:
+  name: cosine
+  warmup_steps: null
+  warmup_ratio: 0.1
+  min_lr: 1.0e-5
+  vlm_min_lr: 1.0e-6
+
+training:
+  output_dir: ./outputs/distill_am1.5_2b_on_policy_nav_lingoqa
+  # At global batch size 128, 19 sampler epochs provide enough batches to
+  # reach max_steps even with the observed invalid-rollout skip rate.
+  epochs: 19
+  max_steps: 100000
+  gradient_accumulation_steps: 1
+  mixed_precision: bf16
+  max_grad_norm: 1.0
+  save_every_steps: 5000
+  log_every_steps: 10
+  resume_from: null
+  seed: 42
+
+validation:
+  enabled: true
+  seed: 42
+  every_steps: 2500
+  split: val
+  clip_allowlist_path: pkg://alpamayo1_5_distill/assets/clip_ids_eval_gold.txt
+  t0_us: 5100000
+  max_clip_retries: 0
+  compute_minade: true
+  stochastic_samples: 6
+  top_p: 0.98
+  temperature: 0.6
+  max_generation_length: 256
+  batch_size: 1
+  num_workers: 2
+  prefetch_factor: 4
+  persistent_workers: true
+  pin_memory: true
+  nav:
+    enabled: true
+    # Required when navigation validation is enabled.
+    root: null
+    cohort: gold644
+    clip_index_path: null
+    max_distance_m: -1
+    exclude_unknown: true
+
+evaluation:
+  checkpoint: null
+  mixed_precision: bf16
