@@ -75,6 +75,7 @@ End-to-end recipes for the Alpamayo VLA models, covering supervised fine-tuning 
 | [`recipes/alpamayo1_sft/`](recipes/alpamayo1_sft/README.md) | Alpamayo 1 supervised fine-tuning with Hugging Face Trainer and DeepSpeed | SFT |
 | [`recipes/alpamayo1_5_sft/`](recipes/alpamayo1_5_sft/README.md) | Alpamayo 1.5 supervised fine-tuning with Hugging Face Trainer and DeepSpeed | SFT |
 | [`recipes/alpamayo1_x_rl/`](recipes/alpamayo1_x_rl/README.md) | Alpamayo 1 and 1.5 open-loop reinforcement learning post-training with Cosmos-RL and GRPO | RL (GRPO) |
+| [`recipes/alpamayo_distillation/`](recipes/alpamayo_distillation/README.md) | Alpamayo 1 and 1.5 distillation, with optional expert SFT and RL refinement |
 | [`recipes/alpamayo1_5_quant/`](recipes/alpamayo1_5_quant/README.md) | Alpamayo 1.5 quantization with Model Optimizer Toolkit — FP8 and NVFP4 + FP8 Mixed Precision | Quantization |
 
 **What you can adapt:** fine-tune on your own fleet data, adjust the camera count and sensor configuration, and swap reward functions for the RL recipe. See each recipe README for supported inputs and hardware requirements.
