@@ -1,0 +1,183 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Expert SFT (stage 2) on the Alpamayo-1.5-2B distilled student.
+# Validated recipe: align_const — constant lr 6.5e-5, expert head only, GT
+# future-trajectory flow objective, self-conditioned on the model's own
+# greedy Chain-of-Causation. The gold-644 metric OSCILLATES along this
+# trajectory by design (high constant lr); the recipe is therefore
+# train-long + save-densely + SELECT the checkpoint on your evaluation
+# panel afterwards.
+#
+# Effective batch = batch_size(1) x grad_accum(8) x world_size(8) = 64.
+# One epoch over the 3,200-clip subset = 50 optimizer steps; 1200 steps = 24 epochs.
+
+data:
+  local_dir: null  # Set with data.local_dir or ALPAMAYO_DATASET_DIR.
+  split: train
+  # Fixed t0 at 5.1 s for every sample (no random t0 in this stage): in fixed
+  # mode the dataset cycles t0_us_list, so a single-element list pins t0.
+  t0_us: 5100000
+  t0_us_list: [5100000]
+  random_t0: false
+  samples_per_clip: 1
+  t0_margin_us: 0
+  max_clip_retries: 8
+  # The curated 3,200-clip SFT subset (selection output; gold-eval clips are
+  # additionally excluded by the default exclude list below).
+  clip_allowlist_path: pkg://alpamayo1_x_distillation_expert_sft/assets/clip_ids_s3_v2.txt
+  exclude_clip_ids_path: pkg://alpamayo1_5_distill/assets/clip_ids_eval_gold.txt
+  batch_size: 1
+  shuffle: true
+  num_workers: 8
+  prefetch_factor: 4
+  persistent_workers: true
+  pin_memory: true
+  mixture:
+    enabled: false
+    basic_ratio: 1.0
+    nav_ratio: 0.0
+    nav_t0_retries: 3
+    nav_sample_retries: 3
+    fallback_nav_to_basic: true
+  nav:
+    enabled: false
+    root: null
+    cohort: train
+    clip_index_path: null
+    max_distance_m: -1
+    exclude_unknown: true
+
+model:
+  factory: alpamayo1_x_distillation_expert_sft.factories:build_expert_sft_student
+  kwargs:
+    # Stage-1 output (the distilled 2B student) — local dir or hub id.
+    name_or_path: null
+    vlm_name_or_path: null
+    dtype: bfloat16
+    attn_implementation: flash_attention_2
+    freeze_vlm: true
+    trainable_params_fp32: false
+
+# Stage-2 "teacher" = the SAME stage-1 checkpoint (self-conditioning): it
+# greedily generates the reasoning prefix the expert attends to. This is NOT
+# the stage-1 10B teacher.
+teacher:
+  factory: alpamayo1_5_distill.training.factory:build_teacher_model
+  kwargs:
+    name_or_path: null  # same checkpoint as model.kwargs.name_or_path
+    vlm_name_or_path: null
+    dtype: bfloat16
+    attn_implementation: flash_attention_2
+
+online_teacher:
+  # KD weight is 0 in this stage; top-k keeps the (unused) teacher-logit
+  # bookkeeping cheap instead of materializing full-vocab logits.
+  top_k: 8
+  max_new_tokens: 256
+
+on_policy:
+  start_step: 1000000  # never
+  ratio: 0.0           # disabled
+  divergence: forward_kl
+  beta: 0.5
+  temperature: 1.0
+  sample_temperature: 0.6
+  sample_top_p: 0.98
+  kl_weight: 0.0
+
+loss:
+  # GT future-trajectory flow matching is the ONLY objective of this stage.
+  ce_weight: 0.0
+  kd_weight: 0.0
+  hidden_weight: 0.0  # 0.0 also skips creating the hidden projection params.
+  flow_weight: 1.0
+  teacher_vector_weight: 0.0
+  future_traj_vlm_weight: 0.0
+  temperature: 0.5
+  kd_scale_by_temperature_squared: false
+  kd_include_prompt: true
+  hidden_include_prompt: true
+  ignore_index: -100
+  student_hidden_dim: 2048
+  teacher_hidden_dim: 2048  # stage-2 teacher is the 2B student itself
+
+optimizer:
+  lr: 6.5e-5
+  use_zero1: false
+  vlm_lr_scale: 1.0  # irrelevant: the VLM is frozen (empty parameter group)
+  betas: [0.9, 0.95]
+  eps: 1.0e-8
+  weight_decay: 0.1
+  vlm_weight_decay: 0.0
+
+scheduler:
+  name: cosine
+  warmup_steps: null
+  # warmup must stay 0: the warmup branch ramps lr from 0 regardless of
+  # min_lr; the validated recipe is constant 6.5e-5 from step 1.
+  warmup_ratio: 0.0
+  # min_lr == lr flattens warmup and cosine into a CONSTANT 6.5e-5 schedule —
+  # this is intentional and matches the validated recipe.
+  min_lr: 6.5e-5
+  vlm_min_lr: 0.0
+
+training:
+  output_dir: ./outputs/expert_sft_am15
+  epochs: 30
+  max_steps: 1200
+  gradient_accumulation_steps: 8
+  mixed_precision: bf16
+  max_grad_norm: 1.0
+  save_every_steps: 25
+  log_every_steps: 10
+  resume_from: null
+  seed: 42
+  # Optional disk cache for the frozen teacher's per-(clip,t0) batch
+  # (greedy CoC + tokenization are deterministic, so rebuilding them every
+  # epoch is redundant; flow noise/timestep are still redrawn every visit).
+  # Use SEPARATE dirs per base model / prompt layout.
+  teacher_batch_cache_dir: null
+
+validation:
+  # Disabled: this stage is checkpoint-selected with the external gold-644
+  # evaluation harness, not the inline validator.
+  enabled: false
+  every_steps: 1000000
+  split: val
+  clip_allowlist_path: pkg://alpamayo1_5_distill/assets/clip_ids_eval_gold.txt
+  t0_us: 5100000
+  max_clip_retries: 0
+  compute_minade: true
+  stochastic_samples: 6
+  top_p: 0.98
+  temperature: 0.6
+  max_generation_length: 256
+  batch_size: 1
+  num_workers: 2
+  prefetch_factor: 4
+  persistent_workers: true
+  pin_memory: true
+  nav:
+    enabled: false
+    root: null
+    cohort: gold644
+    clip_index_path: null
+    max_distance_m: -1
+    exclude_unknown: true
+
+evaluation:
+  checkpoint: null
+  mixed_precision: bf16
