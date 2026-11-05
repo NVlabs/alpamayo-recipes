@@ -1,0 +1,55 @@
+[project]
+name = "alpamayo1-x-edgellm"
+version = "0.1.0"
+requires-python = "==3.12.*"
+# The DRIVE Thor environment README step 0 installs from uv.lock (`uv sync --frozen`). tensorrt is
+# deliberately absent: its wheel comes from the TensorRT SDK on the target, since engines are not
+# portable across TensorRT versions.
+dependencies = [
+  "alpamayo-recipes",
+  "alpamayo_r1",  # model, tokenizer, action space and dataset loader (installed without its pins)
+  "colorlog",
+  "einops",
+  "hydra-core",
+  "numpy",
+  "onnx==1.19.0",
+  "pandas",
+  "physical-ai-av==0.2.0",
+  "pillow",
+  "safetensors",
+  "scipy",
+  "torch==2.10.0",
+  "transformers==4.57.1",
+]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+# Look one level up (recipes/) so setuptools finds this recipe as a package.
+[tool.setuptools.packages.find]
+where = [".."]
+include = ["alpamayo1_x_edgellm*"]
+
+[tool.uv]
+environments = ["sys_platform == 'linux'"]
+# alpamayo_r1 pins torch 2.8, torchvision and flash-attn for training; the recipe needs none of
+# them (only its model, tokenizer and data-loading code).
+override-dependencies = [
+  "torch==2.10.0",
+  "torchvision; sys_platform == 'never'",
+  "flash-attn; sys_platform == 'never'",
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
+
+[tool.uv.sources]
+alpamayo_r1 = { git = "https://github.com/NVlabs/alpamayo.git", rev = "4cda35d" }
+alpamayo-recipes = { path = "../../src", editable = true }
+torch = { index = "pytorch-cu130" }
+
+[tool.ruff]
+line-length = 100

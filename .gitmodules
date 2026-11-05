@@ -1,0 +1,4 @@
+[submodule "recipes/alpamayo1_x_edgellm/tensorrt-edge-llm"]
+	path = recipes/alpamayo1_x_edgellm/tensorrt-edge-llm
+	url = https://github.com/jin-yc10/TensorRT-Edge-LLM.git
+	branch = alpamayo-fused-gate-up
