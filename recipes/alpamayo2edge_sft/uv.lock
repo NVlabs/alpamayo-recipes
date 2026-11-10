@@ -36,7 +36,7 @@ source = { editable = "../../src" }
 [[package]]
 name = "alpamayo2-edge"
 version = "0.1.0"
-source = { git = "https://github.com/NVlabs/alpamayo2-edge.git?rev=c4980c0028621ab1e442c6af98ad20aeb5ed3d6b#c4980c0028621ab1e442c6af98ad20aeb5ed3d6b" }
+source = { git = "https://github.com/NVlabs/alpamayo2-edge.git?rev=02f55a7aeabc1a2b9f7a80445c08e40bddc89f5e#02f55a7aeabc1a2b9f7a80445c08e40bddc89f5e" }
 dependencies = [
     { name = "accelerate" },
     { name = "colorlog" },
@@ -99,7 +99,7 @@ shared = [
 [package.metadata]
 requires-dist = [
     { name = "accelerate", specifier = ">=1.12.0" },
-    { name = "alpamayo2-edge", git = "https://github.com/NVlabs/alpamayo2-edge.git?rev=c4980c0028621ab1e442c6af98ad20aeb5ed3d6b" },
+    { name = "alpamayo2-edge", git = "https://github.com/NVlabs/alpamayo2-edge.git?rev=02f55a7aeabc1a2b9f7a80445c08e40bddc89f5e" },
     { name = "av", specifier = ">=16.0.1" },
     { name = "deepspeed", specifier = "==0.19.1" },
     { name = "einops", specifier = ">=0.8.1" },
