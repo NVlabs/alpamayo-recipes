@@ -80,6 +80,7 @@ End-to-end recipes for the Alpamayo VLA models, covering supervised fine-tuning 
 | [`recipes/alpamayo_distillation/`](recipes/alpamayo_distillation/README.md) | Alpamayo 1 and 1.5 distillation, with optional expert SFT and RL refinement |
 | [`recipes/alpamayo1_5_speculative_decoding/`](recipes/alpamayo1_5_speculative_decoding/README.md) | Alpamayo 1.5 Domino and DFlash2 draft training with SpecForge | Speculative Decoding |
 | [`recipes/alpamayo1_5_quant/`](recipes/alpamayo1_5_quant/README.md) | Alpamayo 1.5 quantization with Model Optimizer Toolkit — FP8 and NVFP4 + FP8 Mixed Precision | Quantization |
+| [`recipes/alpamayo2edge_edgellm/`](recipes/alpamayo2edge_edgellm/README.md) | Alpamayo2-Edge export, FP8 quantization, engine build and inference on DRIVE AGX Thor with TensorRT Edge-LLM | Deployment |
 
 The [Alpamayo 2 Edge recipe](recipes/alpamayo2edge_sft/README.md) includes joint
 training and trajectory evaluation on PAI, with optional navigation conditioning
