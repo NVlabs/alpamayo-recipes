@@ -1,0 +1,98 @@
+name: Alpamayo 2 Edge CPU behavior
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/alpamayo2edge-cpu.yml"
+      - ".github/scripts/export_edge_cpu_lock.py"
+      - ".github/requirements/pylock.alpamayo2edge-cpu.toml"
+      - ".github/requirements/alpamayo2edge-deepspeed-contract.txt"
+      - ".github/requirements/pylock.stage1-vlm-cpu.toml"
+      - "recipes/alpamayo2edge_sft/**"
+      - "tests/test_ci_baseline.py"
+      - "tests/test_prepare_pai_annotations.py"
+      - "tests/test_recipe_static_contracts.py"
+      - "scripts/prepare_pai_annotations.py"
+      - "src/alpamayo/data/**"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/alpamayo2edge-cpu.yml"
+      - ".github/scripts/export_edge_cpu_lock.py"
+      - ".github/requirements/pylock.alpamayo2edge-cpu.toml"
+      - ".github/requirements/alpamayo2edge-deepspeed-contract.txt"
+      - ".github/requirements/pylock.stage1-vlm-cpu.toml"
+      - "recipes/alpamayo2edge_sft/**"
+      - "tests/test_ci_baseline.py"
+      - "tests/test_prepare_pai_annotations.py"
+      - "tests/test_recipe_static_contracts.py"
+      - "scripts/prepare_pai_annotations.py"
+      - "src/alpamayo/data/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alpamayo2edge-cpu-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  HF_HUB_OFFLINE: "1"
+  TRANSFORMERS_OFFLINE: "1"
+  WANDB_MODE: disabled
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  DS_ACCELERATOR: cpu
+  PYTHONPATH: ${{ github.workspace }}/recipes:${{ github.workspace }}/src
+
+jobs:
+  edge-behavior:
+    name: CPU behavior with release API doubles
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        with:
+          version: "0.11.19"
+          enable-cache: true
+          cache-suffix: alpamayo2edge-cpu
+          cache-dependency-glob: |
+            .github/requirements/pylock.alpamayo2edge-cpu.toml
+            .github/requirements/alpamayo2edge-deepspeed-contract.txt
+
+      - name: Check CPU lock matches recipe dependencies
+        run: python .github/scripts/export_edge_cpu_lock.py --check
+
+      - name: Sync CPU test dependencies
+        run: >-
+          uv pip sync --system --require-hashes
+          --only-binary :all: --no-binary antlr4-python3-runtime
+          .github/requirements/pylock.alpamayo2edge-cpu.toml
+
+      - name: Install pinned DeepSpeed CPU contract fixtures
+        env:
+          DS_BUILD_OPS: "0"
+        run: >-
+          uv pip install --system --no-deps --no-build-isolation --require-hashes
+          -r .github/requirements/alpamayo2edge-deepspeed-contract.txt
+
+      - name: Run CPU behavior tests with explicit release API doubles
+        run: >-
+          python -m pytest -q -p no:cacheprovider
+          recipes/alpamayo2edge_sft/tests --edge-release-stub
+          --require-deepspeed-contracts
+          tests/test_prepare_pai_annotations.py tests/test_recipe_static_contracts.py

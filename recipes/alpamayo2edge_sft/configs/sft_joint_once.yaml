@@ -1,0 +1,54 @@
+defaults:
+  - sft_joint
+  - /preprocess@driving.train.preprocess: trajectory
+  - /preprocess@driving.val.preprocess: trajectory
+  - _self_
+
+# Explicit mappings replace the PAI datasets instead of inheriting their kwargs.
+driving:
+  data_root: ???
+  split_manifest: ???
+  split_audit:
+    temporal_only: true
+    min_time_gap_seconds: 86400
+    min_location_gap_m: 250
+  train:
+    _target_: alpamayo2edge_sft.driving_datasets.ONCEDataset
+    _recursive_: false
+    data_root: ${driving.data_root}
+    split_manifest: ${driving.split_manifest}
+    split_audit: ${driving.split_audit}
+    split: train
+    num_history_steps: null
+    num_future_steps: 64
+    time_step: 0.1
+    frame_offsets: [-2.0, -1.0, -0.5, -0.1, 0.0]
+    camera_pixel_bounds:
+      1: [163840, 196608]
+    data_seed: ${trainer.data_seed}
+    sample_stride_seconds: 2.0
+    max_samples: null
+  val:
+    _target_: alpamayo2edge_sft.driving_datasets.ONCEDataset
+    _recursive_: false
+    data_root: ${driving.data_root}
+    split_manifest: ${driving.split_manifest}
+    split_audit: ${driving.split_audit}
+    split: val
+    num_history_steps: null
+    num_future_steps: 64
+    time_step: 0.1
+    frame_offsets: [-2.0, -1.0, -0.5, -0.1, 0.0]
+    camera_pixel_bounds:
+      1: [163840, 196608]
+    # Keep validation selection fixed when trajectory sampling seeds change.
+    data_seed: 42
+    sample_stride_seconds: 2.0
+    max_samples: null
+
+data:
+  train_dataset: ${driving.train}
+  val_dataset: ${driving.val}
+
+paths:
+  output_dir: ./outputs/joint_once

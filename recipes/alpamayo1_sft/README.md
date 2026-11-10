@@ -177,7 +177,7 @@ The reasoning / clip-index paths are **relative to `data.*.local_dir`** — the 
 
 Note: `reasoning_metadata` lets the dataset attach a `cot` field; `clip_index_metadata` ensures only reasoning-bearing clips are enumerated (otherwise non-reasoning clips reach the chat template without `cot`); `use_default_keyframe=false` makes `t0_us` come from each clip's real reasoning-event timestamp instead of the global `DEFAULT_T0_US = 5_100_000` (otherwise `get_reasoning_data` raises the `5100000 not found` ValueError above).
 
-## Run Stage 2 Fine-tuning 
+## Run Stage 2 Fine-tuning
 
 Stage 2 adds the trajectory diffusion expert and keeps the Stage-1 VLM frozen.
 

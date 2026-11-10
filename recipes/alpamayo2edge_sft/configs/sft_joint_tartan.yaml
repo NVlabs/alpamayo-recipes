@@ -1,0 +1,18 @@
+defaults:
+  - sft_joint_once
+  - _self_
+
+driving:
+  allow_unverified_image_timestamps: false
+  legacy_image_timestamp_evidence: null
+  train:
+    _target_: alpamayo2edge_sft.driving_datasets.TartanDriveDataset
+    allow_unverified_image_timestamps: ${driving.allow_unverified_image_timestamps}
+    legacy_image_timestamp_evidence: ${driving.legacy_image_timestamp_evidence}
+  val:
+    _target_: alpamayo2edge_sft.driving_datasets.TartanDriveDataset
+    allow_unverified_image_timestamps: ${driving.allow_unverified_image_timestamps}
+    legacy_image_timestamp_evidence: ${driving.legacy_image_timestamp_evidence}
+
+paths:
+  output_dir: ./outputs/joint_tartan

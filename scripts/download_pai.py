@@ -16,7 +16,7 @@
 
 """Download the Physical AI AV dataset from Hugging Face.
 
-example: for downloading 4camera + egomotion for AR1 finetuning
+example: for downloading camera features and egomotion for fine-tuning
 python scripts/download_pai.py --chunk-ids 0-2 \
          --camera camera_front_wide_120fov camera_cross_left_120fov camera_cross_right_120fov camera_front_tele_30fov \
          --calibration camera_intrinsics sensor_extrinsics vehicle_dimensions --labels egomotion egomotion.offline obstacle.offline
@@ -31,7 +31,22 @@ python scripts/download_pai.py --only-reasoning-chunks --num-reasoning-clips 64 
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
+from datetime import datetime, timezone
+import fcntl
+import json
+import os
+import shlex
 from pathlib import Path
+import sys
+import tempfile
+
+# Support running this source-checkout CLI before installing a recipe environment.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from alpamayo.data.pai_metadata import (
+    EDGE_MIN_T0_US, EDGE_MAX_T0_US, LEGACY_MIN_T0_US,
+    parse_chunk_ids, events_have_reasoning,
+)
 
 DEFAULT_REPO_ID = "nvidia/PhysicalAI-Autonomous-Vehicles"
 MANDATORY_PATTERNS = [
@@ -119,7 +134,7 @@ def parse_args() -> argparse.Namespace:
         dest="num_reasoning_clips",
         help=(
             "Only valid with --only-reasoning-chunks. Randomly sample N clips from "
-            "reasoning/ood_reasoning.parquet (after filtering empty events), then download only the "
+            "reasoning/ood_reasoning.parquet (after filtering empty annotations and invalid event times), then download only the "
             "chunks containing those clips. Also writes the corresponding rows from clip_index.parquet "
             "to <output-dir>/clip_index_reasoning_mini.parquet."
         ),
@@ -131,6 +146,8 @@ def parse_args() -> argparse.Namespace:
         dest="random_seed",
         help="Random seed used by --num-reasoning-clips sampling for reproducibility. Default: 11.",
     )
+    parser.add_argument("--revision", default=None, help="Hugging Face dataset revision; resolved to a commit SHA and recorded locally.")
+    parser.add_argument("--profile", choices=("legacy", "edge"), default="legacy", help="Reasoning event window: legacy (1.6, 13.6] s; edge [2.0, 13.6] s.")
     args = parser.parse_args()
     if args.num_reasoning_clips is not None and not args.only_reasoning_chunks:
         parser.error(
@@ -190,54 +207,21 @@ def build_allow_patterns(
     return list(dict.fromkeys(patterns))
 
 
-def _ood_reasoning_events_nonempty(events_cell: object) -> bool:
-    """Return True if ``ood_reasoning.events`` has usable non-empty content.
-
-    Aligns with ``pai_utils._read_reasoning_data``: None, NaN, blank/``[]`` JSON,
-    and empty lists are treated as no CoT labels (skip downloading that clip's chunk).
-    """
-    import json
-
-    import pandas as pd
-
-    if events_cell is None:
-        return False
-    if isinstance(events_cell, str):
-        stripped = events_cell.strip()
-        if not stripped:
-            return False
-        try:
-            parsed = json.loads(stripped)
-        except json.JSONDecodeError:
-            return False
-        if isinstance(parsed, dict):
-            return len(parsed) > 0
-        if isinstance(parsed, (list, tuple)):
-            return len(parsed) > 0
-        return True
-    if pd.api.types.is_scalar(events_cell) and pd.isna(events_cell):
-        return False
-    if isinstance(events_cell, (list, tuple)):
-        return len(events_cell) > 0
-    if isinstance(events_cell, dict):
-        return len(events_cell) > 0
-    if hasattr(events_cell, "__len__") and not isinstance(events_cell, (str, bytes)):
-        try:
-            return len(events_cell) > 0
-        except TypeError:
-            return True
-    return bool(events_cell)
+def _ood_reasoning_events_nonempty(events_cell: object, min_t0_us: int = LEGACY_MIN_T0_US) -> bool:
+    """Keep a clip when any labeled event falls within the requested recipe window."""
+    return events_have_reasoning(events_cell, min_t0_us, EDGE_MAX_T0_US)
 
 
 def infer_chunk_ids_from_ood_and_clip_index(
     output_dir: Path,
     num_reasoning_clips: int | None = None,
     random_seed: int = 42,
+    min_t0_us: int = LEGACY_MIN_T0_US,
 ) -> list[int]:
     """Return sorted unique chunk IDs for clip_ids present in both ood_reasoning and clip_index.
 
     When ``num_reasoning_clips`` is given, reproducibly downsample ood_reasoning (after
-    filtering empty events) to that many clips using ``random_seed``, and write the matching
+    filtering empty annotations and invalid event times) to that many clips using ``random_seed``, and write the matching
     rows of ``clip_index.parquet`` to ``<output_dir>/clip_index_reasoning_mini.parquet``.
     """
     try:
@@ -264,7 +248,7 @@ def infer_chunk_ids_from_ood_and_clip_index(
     # them anyway, so skip downloading their chunks.
     total_ood = len(ood)
     if "events" in ood.columns:
-        nonempty = ood["events"].apply(_ood_reasoning_events_nonempty)
+        nonempty = ood["events"].apply(lambda events: _ood_reasoning_events_nonempty(events, min_t0_us))
         ood = ood.loc[nonempty]
         skipped = total_ood - len(ood)
         if skipped:
@@ -273,10 +257,12 @@ def infer_chunk_ids_from_ood_and_clip_index(
                 f"events in ood_reasoning; {len(ood)} clip(s) remain."
             )
 
+    ood = ood.loc[ood.index.astype(str).isin(clip_index.index.astype(str))]
+
     if num_reasoning_clips is not None:
         available = len(ood)
         if available == 0:
-            raise SystemExit("No reasoning clips available after filtering empty events.")
+            raise SystemExit("No reasoning clips available after filtering empty annotations and invalid event times.")
         k = min(num_reasoning_clips, available)
         if num_reasoning_clips > available:
             print(
@@ -326,84 +312,182 @@ def _parse_cli_chunk_ids(chunk_ids: str) -> list[int]:
     Supports three forms: a single ID (``"0"``), space-separated IDs (``"0 1 2"``),
     and a half-open range (``"0-3"`` -> ``[0, 1, 2]``).
     """
-    if " " in chunk_ids:
-        return [int(x) for x in chunk_ids.split()]
-    if "-" in chunk_ids:
-        start = int(chunk_ids.split("-")[0])
-        end = int(chunk_ids.split("-")[1])
-        return list(range(start, end))
-    return [int(chunk_ids)]
+    return parse_chunk_ids(chunk_ids)
+
+
+def _write_manifest(path: Path, manifest: dict) -> None:
+    """Publish request state atomically, including before an interruptible transfer."""
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", dir=path.parent, prefix=".download_manifest_", delete=False
+        ) as stream:
+            temporary = Path(stream.name)
+            json.dump(manifest, stream, indent=2)
+            stream.write("\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
+@contextmanager
+def _locked_output(output_dir: Path):
+    """Prevent concurrent callers from accepting different revisions or losing history."""
+    # Keep the inode in place after releasing: unlinking a lock permits another
+    # process to acquire a different inode while an existing waiter still owns it.
+    with (output_dir / ".download_manifest.lock").open("a") as stream:
+        try:
+            fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as exc:
+            raise SystemExit(
+                "Another downloader is using this output directory; wait for it to finish."
+            ) from exc
+        try:
+            yield
+        finally:
+            fcntl.flock(stream, fcntl.LOCK_UN)
+
+
+def _load_download_manifest(output_dir: Path, revision: str) -> dict:
+    path = output_dir / "download_manifest.json"
+    if not path.exists():
+        if any(item.name != ".download_manifest.lock" for item in output_dir.iterdir()):
+            raise SystemExit(
+                "Output directory is populated but has no download_manifest.json; "
+                "its dataset revision cannot be verified. Use a new empty directory. "
+                "Existing files have not been changed."
+            )
+        return {"repo_id": DEFAULT_REPO_ID, "resolved_revision": revision, "requests": []}
+    manifest = json.loads(path.read_text())
+    if manifest.get("repo_id") != DEFAULT_REPO_ID:
+        raise SystemExit("Output directory records a different dataset repository; use a new directory.")
+    if manifest.get("resolved_revision") != revision:
+        raise SystemExit(
+            "Output directory contains a different recorded dataset revision. "
+            f"Recorded SHA: {manifest.get('resolved_revision')!r}; resolved requested SHA: {revision!r}. "
+            "To extend this directory, rerun the same download command with "
+            f"--revision {shlex.quote(str(manifest.get('resolved_revision')))}. "
+            "Use a new directory for the requested revision to avoid mixing data."
+        )
+    if "requests" not in manifest:
+        # The older format was written only after success and retained the last
+        # selection. Preserve what is known without inventing earlier requests.
+        manifest["requests"] = [{
+            key: manifest[key]
+            for key in ("requested_revision", "profile", "chunk_ids", "allow_patterns")
+            if key in manifest
+        }]
+        manifest["requests"][0]["status"] = "complete"
+    if not isinstance(manifest["requests"], list):
+        raise SystemExit("Invalid download manifest request history; use a new directory.")
+    return manifest
 
 
 def main() -> None:
-    """Run the PAI dataset download.
-
-    In ``--only-reasoning-chunks`` mode, first downloads ``clip_index.parquet`` and
-    ``reasoning/ood_reasoning.parquet``, infers the minimal set of chunk IDs to fetch
-    (optionally downsampled via ``--num-reasoning-clips``), then performs the main
-    ``snapshot_download`` with the resolved ``allow_patterns``.
-    """
+    """Download one pinned revision, retaining interrupted and completed requests."""
     args = parse_args()
-
     try:
-        from huggingface_hub import snapshot_download
+        from huggingface_hub import HfApi, snapshot_download
     except ImportError as exc:
         raise SystemExit(
             "huggingface_hub is not installed. Install with: pip install huggingface_hub"
         ) from exc
 
-    args.output_dir.mkdir(parents=True, exist_ok=True)
     raw_chunk_ids = args.chunk_ids
+    if not args.only_reasoning_chunks:
+        args.chunk_ids = [] if raw_chunk_ids is None else _parse_cli_chunk_ids(raw_chunk_ids)
+    component_pairs = parse_component_subparts(args)
+    revision = HfApi().dataset_info(DEFAULT_REPO_ID, revision=args.revision).sha
+    if not revision:
+        raise SystemExit("Could not resolve the dataset revision to a commit SHA")
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    manifest_path = args.output_dir / "download_manifest.json"
+    with _locked_output(args.output_dir):
+        manifest = _load_download_manifest(args.output_dir, revision)
+        request = {
+            "requested_revision": args.revision,
+            "profile": args.profile,
+            "requested_chunk_ids": raw_chunk_ids,
+            "chunk_ids": None if args.only_reasoning_chunks else args.chunk_ids,
+            "allow_patterns": [],
+            "status": "in_progress",
+            "started_at": datetime.now(timezone.utc).isoformat(),
+        }
+        manifest["requests"].append(request)
 
-    if args.only_reasoning_chunks:
-        if raw_chunk_ids is not None:
-            print(
-                "[download_pai] Ignoring --chunk-ids; inferring chunk IDs from "
-                "reasoning/ood_reasoning.parquet and clip_index.parquet."
+        def record_request():
+            # Retain the latest selection at the top level for old consumers;
+            # requests is the complete history for sequential chunk downloads.
+            for key in ("error_type", "finished_at"):
+                if key not in request:
+                    manifest.pop(key, None)
+            manifest.update(request)
+            _write_manifest(manifest_path, manifest)
+
+        # Reserve the revision before any snapshot can leave downloaded files.
+        # If the process is killed, in_progress explicitly marks the unfinished request.
+        record_request()
+        print(f"Dataset revision: {revision}")
+        try:
+            if args.only_reasoning_chunks:
+                if raw_chunk_ids is not None:
+                    print(
+                        "[download_pai] Ignoring --chunk-ids; inferring chunk IDs from "
+                        "reasoning/ood_reasoning.parquet and clip_index.parquet."
+                    )
+                print("Phase 1 (infer chunks):", PHASE1_INFER_CHUNKS_PATTERNS)
+                request["allow_patterns"] = list(PHASE1_INFER_CHUNKS_PATTERNS)
+                record_request()
+                snapshot_download(
+                    repo_id=DEFAULT_REPO_ID,
+                    repo_type="dataset",
+                    revision=revision,
+                    local_dir=str(args.output_dir),
+                    local_dir_use_symlinks=False,
+                    allow_patterns=PHASE1_INFER_CHUNKS_PATTERNS,
+                )
+                args.chunk_ids = infer_chunk_ids_from_ood_and_clip_index(
+                    args.output_dir,
+                    num_reasoning_clips=args.num_reasoning_clips,
+                    random_seed=args.random_seed,
+                    min_t0_us=EDGE_MIN_T0_US if args.profile == "edge" else LEGACY_MIN_T0_US,
+                )
+                print(
+                    f"[download_pai] Inferred {len(args.chunk_ids)} chunk(s) from ood_reasoning "
+                    f"clip_ids (via clip_index): {args.chunk_ids}"
+                )
+            else:
+                print("downloading chunks: ", args.chunk_ids if args.chunk_ids else "all")
+
+            allow_patterns = build_allow_patterns(component_pairs, args.chunk_ids)
+            request["chunk_ids"] = args.chunk_ids
+            request["allow_patterns"] = list(dict.fromkeys(
+                request["allow_patterns"] + allow_patterns
+            ))
+            record_request()
+            print("download patterns", allow_patterns)
+            downloaded_path = snapshot_download(
+                repo_id=DEFAULT_REPO_ID,
+                repo_type="dataset",
+                revision=revision,
+                local_dir=str(args.output_dir),
+                local_dir_use_symlinks=False,
+                allow_patterns=allow_patterns,
             )
-        print("Phase 1 (infer chunks):", PHASE1_INFER_CHUNKS_PATTERNS)
-        snapshot_download(
-            repo_id=DEFAULT_REPO_ID,
-            repo_type="dataset",
-            local_dir=str(args.output_dir),
-            local_dir_use_symlinks=False,
-            allow_patterns=PHASE1_INFER_CHUNKS_PATTERNS,
-        )
-        inferred = infer_chunk_ids_from_ood_and_clip_index(
-            args.output_dir,
-            num_reasoning_clips=args.num_reasoning_clips,
-            random_seed=args.random_seed,
-        )
-        args.chunk_ids = inferred
-        print(
-            f"[download_pai] Inferred {len(inferred)} chunk(s) from ood_reasoning "
-            f"clip_ids (via clip_index): {inferred}"
-        )
-    else:
-        if args.chunk_ids is None:
-            args.chunk_ids = []
-        else:
-            args.chunk_ids = _parse_cli_chunk_ids(args.chunk_ids)
-
-        print("downloading chunks: ", args.chunk_ids if args.chunk_ids else "all")
-
-    try:
-        component_pairs = parse_component_subparts(args)
-        allow_patterns = build_allow_patterns(component_pairs, args.chunk_ids)
-    except ValueError as exc:
-        raise SystemExit(str(exc)) from exc
-    print("download patterns", allow_patterns)
-
-    downloaded_path = snapshot_download(
-        repo_id=DEFAULT_REPO_ID,
-        repo_type="dataset",
-        local_dir=str(args.output_dir),
-        local_dir_use_symlinks=False,
-        allow_patterns=allow_patterns,
-    )
-
-    print(f"Downloaded dataset snapshot to: {downloaded_path}")
-    print("Included mandatory patterns: " + ", ".join(MANDATORY_PATTERNS))
+        except BaseException as exc:
+            request["status"] = "interrupted" if isinstance(exc, KeyboardInterrupt) else "failed"
+            request["error_type"] = type(exc).__name__
+            request["finished_at"] = datetime.now(timezone.utc).isoformat()
+            record_request()
+            raise
+        request["status"] = "complete"
+        request["finished_at"] = datetime.now(timezone.utc).isoformat()
+        record_request()
+        print(f"Downloaded dataset snapshot to: {downloaded_path}")
+        print("Included mandatory patterns: " + ", ".join(MANDATORY_PATTERNS))
 
 
 if __name__ == "__main__":

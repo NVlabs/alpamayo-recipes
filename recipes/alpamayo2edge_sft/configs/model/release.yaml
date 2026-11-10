@@ -1,0 +1,16 @@
+_target_: alpamayo2edge_sft.models.trainable_alpamayo2_edge.TrainableAlpamayo2Edge.from_pretrained
+pretrained_model_name_or_path: nvidia/Alpamayo2-Edge
+dtype: float32
+attn_implementation: sdpa
+training_stage: joint
+# Cosmos3-Edge attention has no per-head Q/K normalization.
+qk_gradient_layout: false
+# Whole-objective weights: continuous trajectory FM and supervised token CE.
+loss_weights:
+  future_traj: 1.0
+  others: 1.0
+# Per-position weights affect the numerator; the denominator counts all target tokens.
+lm_token_loss_weights:
+  future_traj: 1.0
+  text: 0.2
+require_complete_weights: true

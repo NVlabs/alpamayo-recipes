@@ -1,0 +1,125 @@
+defaults:
+  - /model: release
+  - /preprocess@data.train_dataset.preprocess: trajectory
+  - /preprocess@data.val_dataset.preprocess: trajectory
+  - _self_
+
+seed: 42
+camera_features:
+  - camera_cross_left_120fov
+  - camera_front_wide_120fov
+  - camera_cross_right_120fov
+  - camera_rear_left_70fov
+  - camera_rear_right_70fov
+  - camera_front_tele_30fov
+# Latest Edge driving profile: front wide/tele have five frames; side/rear have three.
+frame_offsets: [-1.0, -0.1, 0.0]
+front_frame_offsets: [-2.0, -1.0, -0.5, -0.1, 0.0]
+include_calibration: false
+camera_pixel_bounds:
+  0: [81920, 98304]
+  1: [163840, 196608]
+  2: [81920, 98304]
+  3: [81920, 98304]
+  5: [81920, 98304]
+  6: [163840, 196608]
+
+paths:
+  output_dir: ./outputs/alpamayo2_edge_sft
+
+data:
+  train_dataset:
+    _target_: alpamayo2edge_sft.dataset.PhysicalAIDataset
+    _recursive_: false
+    local_dir: ???
+    chunk_ids: "729-744"
+    split: train
+    use_default_keyframe: false
+    random_keyframes: true
+    data_seed: ${trainer.data_seed}
+    camera_features: ${camera_features}
+    frame_offsets: ${frame_offsets}
+    front_frame_offsets: ${front_frame_offsets}
+    num_history_steps: null
+    include_calibration: ${include_calibration}
+    camera_pixel_bounds: ${camera_pixel_bounds}
+  val_dataset:
+    _target_: alpamayo2edge_sft.dataset.PhysicalAIDataset
+    _recursive_: false
+    local_dir: ???
+    # Select official validation clips; this does not establish pretraining disjointness.
+    chunk_ids: "1134-1145"
+    split: val
+    use_default_keyframe: true
+    camera_features: ${camera_features}
+    frame_offsets: ${frame_offsets}
+    front_frame_offsets: ${front_frame_offsets}
+    num_history_steps: null
+    include_calibration: ${include_calibration}
+    camera_pixel_bounds: ${camera_pixel_bounds}
+  collator:
+    _target_: alpamayo2edge_sft.processor.Alpamayo2EdgeCollator
+    max_length: 8192
+    pad_to_fixed_length: false
+
+callbacks: {}
+
+evaluate:
+  mode: loss
+  eval_ckpt: null
+  max_eval_steps: -1 # Evaluate the complete selected validation dataset.
+  autocast_dtype: bfloat16
+  num_traj_samples: 6
+  num_samples_per_forward: 2
+  num_traj_sets: 1
+  top_p: 0.98
+  temperature: 0.6
+  max_generation_length: 256
+
+trainer:
+  seed: ${seed}
+  data_seed: ${seed}
+  independent_dp_rng: true
+  output_dir: ${paths.output_dir}
+  resume_from_checkpoint: null
+  # Epoch-based budget adapts to dataset size. A positive max_steps overrides it.
+  max_steps: -1
+  num_train_epochs: 3
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 8
+  # Conservative fine-tuning starting point for global batch 64
+  # (8 GPUs x 1 sample x 8 accumulation).
+  learning_rate: 3.5e-6
+  lr_multiplier:
+    vlm.model.visual: 0.1
+    vlm.model.projector: 0.1
+    expert: 4.0
+  weight_decay: 0.1
+  adam_beta1: 0.9
+  adam_beta2: 0.95
+  adam_epsilon: 1.0e-8
+  max_grad_norm: 1.0
+  gradient_norm_algorithm: auto
+  warmup_steps: 0.04 # HF5 interprets a value below 1 as a fraction of total steps.
+  lr_scheduler_type: cosine_with_min_lr
+  lr_scheduler_kwargs:
+    min_lr_rate: 0.01
+  optim: adamw_torch_fused
+  bf16: true
+  # The expert conditions on a detached copy of the native HF KV cache.
+  gradient_checkpointing: false
+  gradient_checkpointing_kwargs:
+    use_reentrant: false
+  deepspeed: configs/deepspeed/zero3.json
+  dataloader_num_workers: 4
+  dataloader_pin_memory: true
+  remove_unused_columns: false
+  logging_steps: 5
+  save_strategy: epoch
+  eval_strategy: epoch
+  eval_on_start: true
+  save_steps: 500
+  save_total_limit: 3
+  report_to: none # override with report_to=wandb and set WANDB_PROJECT for logging
+  run_name: alpamayo2edge-sft-${now:%Y%m%d-%H%M%S}

@@ -1,8 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 from __future__ import annotations
 
 import importlib.util
 import json
-import logging as stdlib_logging
 import sys
 import types
 from pathlib import Path
@@ -26,8 +28,10 @@ class _ReasoningFrame:
 
 
 def _load_pai_utils(monkeypatch: pytest.MonkeyPatch) -> types.ModuleType:
+    monkeypatch.syspath_prepend(str(ROOT / "src"))
     numpy = types.ModuleType("numpy")
     numpy.int64 = int
+    numpy.integer = int
     numpy.isscalar = lambda value: isinstance(
         value, (str, bytes, int, float, bool, type(None))
     )
@@ -48,16 +52,6 @@ def _load_pai_utils(monkeypatch: pytest.MonkeyPatch) -> types.ModuleType:
     physical_ai_av_dataset = types.ModuleType("physical_ai_av.dataset")
     physical_ai_av_dataset.Features = object
 
-    alpamayo_r1 = types.ModuleType("alpamayo_r1")
-    alpamayo_r1.__path__ = []
-    common = types.ModuleType("alpamayo_r1.common")
-    ranked_logging = types.ModuleType("alpamayo_r1.common.logging")
-    ranked_logging.RankedLogger = (
-        lambda name, rank_zero_only=False: stdlib_logging.getLogger(name)
-    )
-    common.logging = ranked_logging
-    alpamayo_r1.common = common
-
     for name, module in {
         "numpy": numpy,
         "pandas": pandas,
@@ -65,9 +59,6 @@ def _load_pai_utils(monkeypatch: pytest.MonkeyPatch) -> types.ModuleType:
         "physical_ai_av.egomotion": egomotion,
         "physical_ai_av.video": video,
         "physical_ai_av.dataset": physical_ai_av_dataset,
-        "alpamayo_r1": alpamayo_r1,
-        "alpamayo_r1.common": common,
-        "alpamayo_r1.common.logging": ranked_logging,
     }.items():
         monkeypatch.setitem(sys.modules, name, module)
 
@@ -91,15 +82,15 @@ def _load_pai_utils(monkeypatch: pytest.MonkeyPatch) -> types.ModuleType:
         ),
         pytest.param(
             {"coc": "", "cot": "legacy"},
-            "",
-            id="empty-coc-does-not-fall-back",
+            "legacy",
+            id="empty-coc-falls-back",
         ),
         pytest.param(
             {"coc": None, "cot": "legacy"},
-            "None",
-            id="null-coc-does-not-fall-back",
+            "legacy",
+            id="null-coc-falls-back",
         ),
-        pytest.param({}, "", id="missing-remains-empty"),
+        pytest.param({}, None, id="missing-is-dropped"),
     ],
 )
 def test_reasoning_event_text_supports_current_and_legacy_keys(
@@ -113,4 +104,4 @@ def test_reasoning_event_text_supports_current_and_legacy_keys(
 
     parsed = pai_utils.PhysicalAIAVDatasetLocalInterface._read_reasoning_data(frame)
 
-    assert parsed["clip-id"]["cot"] == [expected]
+    assert parsed["clip-id"]["cot"] == ([] if expected is None else [expected])

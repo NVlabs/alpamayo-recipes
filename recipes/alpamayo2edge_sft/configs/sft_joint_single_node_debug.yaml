@@ -1,0 +1,34 @@
+# Small joint-training configuration for checking the training loop.
+defaults:
+  - sft_joint
+  - _self_
+
+camera_features:
+  - camera_front_wide_120fov
+frame_offsets: [0.0]
+front_frame_offsets: [0.0]
+
+paths:
+  output_dir: ./outputs/joint_single_node_debug
+
+data:
+  train_dataset:
+    chunk_ids: "0-1"
+    split: null
+  val_dataset:
+    chunk_ids: "0-1"
+    split: null
+  collator:
+    pad_to_fixed_length: false
+
+trainer:
+  max_steps: 2
+  gradient_accumulation_steps: 1
+  deepspeed: null
+  dataloader_num_workers: 0
+  warmup_steps: 0
+  logging_steps: 1
+  save_strategy: "no"
+  eval_strategy: "no"
+  eval_on_start: false
+  report_to: none

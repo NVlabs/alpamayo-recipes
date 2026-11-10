@@ -1,0 +1,17 @@
+defaults:
+  - sft_eval_trajectory
+  - /dataset@data.val_dataset: annotated
+  - override /preprocess@data.val_dataset.preprocess: nav_cot_generation
+  - _self_
+
+data:
+  val_dataset:
+    require_navigation: true
+    # Generation evaluation uses model predictions, never annotation CoT.
+    require_cot: false
+
+evaluate:
+  generate_cot: true
+
+paths:
+  output_dir: ./outputs/eval_trajectory_nav_cot

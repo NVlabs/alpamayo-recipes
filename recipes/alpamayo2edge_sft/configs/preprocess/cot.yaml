@@ -1,0 +1,5 @@
+_target_: alpamayo2edge_sft.processor.get_preprocess_data_fn_from_model_config
+components_order: [image, traj_history, prompt, cot, traj_future]
+components_prompt: [cot, traj_future]
+label_components: [assistant]
+generation_mode: false

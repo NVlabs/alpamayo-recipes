@@ -18,9 +18,9 @@
 
 example:
 python scripts/curate_pai_samples.py \
-  --clip-index-path /path/to/PAI_datset/clip_index.parquet \
+  --clip-index-path /path/to/PAI_dataset/clip_index.parquet \
   --chunk 3116-3119 --num-samples 16 \
-  --output-path /path/to/PAI_datset/clip_index_3116_mini.parquet
+  --output-path /path/to/PAI_dataset/clip_index_3116_mini.parquet
 
 example: only curate clips that include the reasoning labels in the ood_reasoning.parquet (optional --chunk to restrict by chunk id)
          typically you will run download_pai.py first to download the ood_reasoning.parquet and clip_index.parquet and if you already
@@ -35,10 +35,18 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import sys
+
+# Support running this source-checkout CLI before installing a recipe environment.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from alpamayo.data.pai_metadata import (
+    EDGE_MIN_T0_US, EDGE_MAX_T0_US, LEGACY_MIN_T0_US,
+    parse_chunk_ids, events_have_reasoning,
+)
 
 import pandas as pd
 
-DEFAULT_CLIP_INDEX_PATH = "dataset/alpamayo/PAI_mini/clip_index.parquet"
+DEFAULT_CLIP_INDEX_PATH = "pai_dataset/clip_index.parquet"
 
 
 def default_ood_reasoning_path(clip_index_path: str) -> Path:
@@ -86,7 +94,10 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Path to reasoning/ood_reasoning.parquet (default: <parent of clip_index>/reasoning/ood_reasoning.parquet)",
     )
+    parser.add_argument("--profile", choices=("legacy", "edge"), default="legacy", help="Use the same reasoning event window as download_pai.py.")
     args = parser.parse_args()
+    if args.num_samples <= 0:
+        parser.error("--num-samples must be positive")
     if args.chunk is None and not args.only_reasoning_chunks:
         parser.error("--chunk is required unless --only-reasoning-chunks is set.")
     return args
@@ -94,54 +105,15 @@ def parse_args() -> argparse.Namespace:
 
 def _parse_chunk_ids(chunk_arg: str) -> list[str]:
     """Parse --chunk like download_pai: single, space-separated, or start-end range."""
-    chunk_arg = chunk_arg.strip()
-    if " " in chunk_arg:
-        return [s.strip() for s in chunk_arg.split() if s.strip()]
-    if "-" in chunk_arg:
-        start_s, end_s = chunk_arg.split("-", 1)
-        start, end = int(start_s.strip()), int(end_s.strip())
-        return [str(i) for i in range(start, end)]
-    return [chunk_arg]
+    return [str(value) for value in parse_chunk_ids(chunk_arg)]
 
 
-def _ood_reasoning_events_nonempty(events_cell: object) -> bool:
-    """Return True if ``ood_reasoning.events`` has usable non-empty content.
-
-    Aligns with ``pai_utils._read_reasoning_data`` and ``download_pai``: None, NaN,
-    blank/``[]`` JSON, and empty lists are excluded (no CoT labels).
-    """
-    import json
-
-    if events_cell is None:
-        return False
-    if isinstance(events_cell, str):
-        stripped = events_cell.strip()
-        if not stripped:
-            return False
-        try:
-            parsed = json.loads(stripped)
-        except json.JSONDecodeError:
-            return False
-        if isinstance(parsed, dict):
-            return len(parsed) > 0
-        if isinstance(parsed, (list, tuple)):
-            return len(parsed) > 0
-        return True
-    if pd.api.types.is_scalar(events_cell) and pd.isna(events_cell):
-        return False
-    if isinstance(events_cell, (list, tuple)):
-        return len(events_cell) > 0
-    if isinstance(events_cell, dict):
-        return len(events_cell) > 0
-    if hasattr(events_cell, "__len__") and not isinstance(events_cell, (str, bytes)):
-        try:
-            return len(events_cell) > 0
-        except TypeError:
-            return True
-    return bool(events_cell)
+def _ood_reasoning_events_nonempty(events_cell: object, min_t0_us: int = LEGACY_MIN_T0_US) -> bool:
+    """Use the same event-text and timestamp checks as the downloader."""
+    return events_have_reasoning(events_cell, min_t0_us, EDGE_MAX_T0_US)
 
 
-def _filter_to_reasoning_clip_ids(clip_index: pd.DataFrame, ood_path: Path) -> pd.DataFrame:
+def _filter_to_reasoning_clip_ids(clip_index: pd.DataFrame, ood_path: Path, min_t0_us: int = LEGACY_MIN_T0_US) -> pd.DataFrame:
     """Keep rows whose index (clip_id) appears in ``ood_reasoning`` with non-empty ``events``."""
     if not ood_path.is_file():
         raise SystemExit(f"OOD reasoning table not found: {ood_path}")
@@ -149,7 +121,7 @@ def _filter_to_reasoning_clip_ids(clip_index: pd.DataFrame, ood_path: Path) -> p
     events_in_ood = "events" in ood.columns
     total_ood = len(ood)
     if events_in_ood:
-        nonempty = ood["events"].apply(_ood_reasoning_events_nonempty)
+        nonempty = ood["events"].apply(lambda events: _ood_reasoning_events_nonempty(events, min_t0_us))
         ood = ood.loc[nonempty]
         skipped = total_ood - len(ood)
         if skipped:
@@ -197,7 +169,7 @@ def main() -> None:
             else default_ood_reasoning_path(args.clip_index_path)
         )
         print(f"[curate_pai_samples] Using OOD reasoning table: {ood_path}")
-        chunk_subset = _filter_to_reasoning_clip_ids(clip_index, ood_path)
+        chunk_subset = _filter_to_reasoning_clip_ids(clip_index, ood_path, EDGE_MIN_T0_US if args.profile == "edge" else LEGACY_MIN_T0_US)
     else:
         chunk_subset = clip_index
 

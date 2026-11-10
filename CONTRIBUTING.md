@@ -274,7 +274,7 @@ for pyproject in recipes/*/pyproject.toml; do
   uv lock --check --project "$recipe_dir"
 done
 python -m compileall -q src scripts recipes
-uv run --with pytest pytest tests -q
+uv run --with pytest --with pyyaml --with pandas --with pyarrow pytest tests -q
 ```
 
 If the recipe includes tests, run them from the recipe environment. If full training, evaluation,
@@ -287,3 +287,14 @@ heavyweight validation that maintainers would need to run separately.
 Keep recipe PRs focused. A new recipe PR should usually avoid unrelated refactors, broad
 dependency updates, or changes to existing recipe behavior. If you need shared utilities under
 `src/alpamayo/`, explain which recipes use them and why they belong in shared code.
+
+### Edge release integration
+
+The Edge CPU workflow runs explicit inference API doubles on pull requests. The
+manual [Alpamayo 2 Edge release integration](.github/workflows/alpamayo2edge-release-integration.yml)
+workflow installs the inference package and runs the native prefix,
+loss, sampling, and checkpoint round-trip tests without those doubles.
+
+For resources that require authentication, maintainers must provide the applicable
+read-only secrets: `ALPAMAYO_EDGE_READ_TOKEN` for the inference GitHub repository,
+and `ALPAMAYO_EDGE_HF_READ_TOKEN` for `nvidia/Alpamayo2-Edge` on Hugging Face.
