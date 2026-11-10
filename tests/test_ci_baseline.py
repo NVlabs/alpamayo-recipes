@@ -292,9 +292,19 @@ def test_package_sources_and_lock_match_shipped_layout() -> None:
     release = sources["alpamayo2-edge"]
     assert release["git"] == "https://github.com/NVlabs/alpamayo2-edge.git"
     assert re.fullmatch(r"[0-9a-f]{40}", release["rev"])
+    assert (
+        f'alpamayo2-edge @ git+{release["git"]}@{release["rev"]}'
+        in project["project"]["dependencies"]
+    )
     assert packages["alpamayo2-edge"]["source"]["git"] == (
         f'{release["git"]}?rev={release["rev"]}#{release["rev"]}'
     )
+    release_requirement = next(
+        requirement
+        for requirement in packages["alpamayo2edge-sft"]["metadata"]["requires-dist"]
+        if requirement["name"] == "alpamayo2-edge"
+    )
+    assert release_requirement["git"] == f'{release["git"]}?rev={release["rev"]}'
     assert packages["alpamayo2edge-sft"]["source"] == {"editable": "."}
     assert project["project"]["requires-python"] == lock["requires-python"]
     assert (RECIPE / project["project"]["readme"]).is_file()

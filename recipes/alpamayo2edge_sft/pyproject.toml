@@ -81,7 +81,7 @@ override-dependencies = ["deepspeed==0.19.1"]
 
 [tool.uv.sources]
 alpamayo-recipes = { path = "../../src", editable = true }
-alpamayo2-edge = { git = "https://github.com/NVlabs/alpamayo2-edge.git" }
+alpamayo2-edge = { git = "https://github.com/NVlabs/alpamayo2-edge.git", rev = "c4980c0028621ab1e442c6af98ad20aeb5ed3d6b" }
 
 [tool.ruff]
 line-length = 100
