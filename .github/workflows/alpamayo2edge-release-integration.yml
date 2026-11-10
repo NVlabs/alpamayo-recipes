@@ -1,0 +1,108 @@
+name: Alpamayo 2 Edge release integration
+
+# Check the public GA inference package with authenticated access when required.
+# Keep API-double checks automatic; run this trusted-branch check before release.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  WANDB_MODE: disabled
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
+  PYTHONPATH: ${{ github.workspace }}/recipes:${{ github.workspace }}/src
+
+jobs:
+  release-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        with:
+          version: "0.11.19"
+      - name: Install locked CPU dependencies
+        run: >-
+          uv pip sync --system --require-hashes
+          --only-binary :all: --no-binary antlr4-python3-runtime
+          .github/requirements/pylock.alpamayo2edge-cpu.toml
+      - name: Install pinned DeepSpeed CPU contract fixtures
+        env:
+          DS_BUILD_OPS: "0"
+          DS_ACCELERATOR: cpu
+        run: >-
+          uv pip install --system --no-deps --no-build-isolation --require-hashes
+          -r .github/requirements/alpamayo2edge-deepspeed-contract.txt
+      - name: Install the actual pinned inference package
+        env:
+          EDGE_READ_TOKEN: ${{ secrets.ALPAMAYO_EDGE_READ_TOKEN }}
+        shell: bash
+        run: |
+          set -eu
+          askpass="$(mktemp)"
+          trap 'rm -f "$askpass"' EXIT
+          cat > "$askpass" <<'SCRIPT'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' x-access-token ;;
+            *Password*) printf '%s\n' "$EDGE_READ_TOKEN" ;;
+          esac
+          SCRIPT
+          chmod 700 "$askpass"
+          export GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0
+          dependency="$(python - <<'PYTHON'
+          import tomllib
+          from pathlib import Path
+          project = tomllib.loads(Path("recipes/alpamayo2edge_sft/pyproject.toml").read_text())
+          print(next(d for d in project["project"]["dependencies"] if d.startswith("alpamayo2-edge @")))
+          PYTHON
+          )"
+          uv pip install --system --no-deps "$dependency"
+      - name: Download the pinned checkpoint tokenizer and processor assets
+        env:
+          HF_TOKEN: ${{ secrets.ALPAMAYO_EDGE_HF_READ_TOKEN }}
+          EDGE_CHECKPOINT_ASSETS: ${{ runner.temp }}/edge-checkpoint-assets
+        run: |
+          python - <<'PYTHON'
+          import os
+          from pathlib import Path
+          from huggingface_hub import snapshot_download
+
+          destination = Path(os.environ["EDGE_CHECKPOINT_ASSETS"])
+          # Deliberately exclude model weights and weight-index metadata.
+          filenames = [
+              "config.json", "tokenizer.json", "tokenizer_config.json",
+              "special_tokens_map.json", "added_tokens.json", "vocab.json", "merges.txt",
+              "processor_config.json", "preprocessor_config.json",
+              "video_preprocessor_config.json", "chat_template.jinja",
+          ]
+          snapshot_download(
+              repo_id="nvidia/Alpamayo2-Edge",
+              revision="ed1f86a5026355850b4fb4831f92f99ac5ada6aa",
+              local_dir=destination,
+              allow_patterns=filenames,
+              token=os.environ.get("HF_TOKEN") or False,
+          )
+          required = ["config.json", "tokenizer.json", "tokenizer_config.json",
+                      "processor_config.json", "chat_template.jinja"]
+          missing = [name for name in required if not (destination / name).is_file()]
+          if missing:
+              raise RuntimeError(f"Checkpoint processor assets are incomplete: {missing}")
+          with Path(os.environ["GITHUB_ENV"]).open("a") as env_file:
+              env_file.write(f"ALPAMAYO2_EDGE_TEST_CHECKPOINT={destination}\n")
+          PYTHON
+      - name: Run native prefix, sampling, loss, and checkpoint tests
+        env:
+          HF_HUB_OFFLINE: "1"
+          TRANSFORMERS_OFFLINE: "1"
+          DS_ACCELERATOR: cpu
+        run: |
+          python -c 'from alpamayo2_edge.models.alpamayo2_edge import Alpamayo2Edge; print(Alpamayo2Edge.__module__)'
+          python -m pytest -q -p no:cacheprovider recipes/alpamayo2edge_sft/tests --require-deepspeed-contracts

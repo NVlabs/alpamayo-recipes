@@ -1,0 +1,9 @@
+defaults:
+  - sft_base
+  - _self_
+
+model:
+  training_stage: joint
+
+paths:
+  output_dir: ./outputs/joint

@@ -1,0 +1,154 @@
+[
+  {
+    "clip_id": "1ae17e2a-bc07-4e57-a04b-e9d5a372cd1e",
+    "t0_relative": 5784920,
+    "nav_text": "Turn left in 11m",
+    "nav_maneuver": "TURN_LEFT",
+    "distance_m": 11.2,
+    "cot": "The left-turn traffic light is green, so proceed with our route's left turn through the intersection."
+  },
+  {
+    "clip_id": "f2205e0b-b16f-491d-a211-e65db71d4f1c",
+    "t0_relative": 10000000,
+    "nav_text": "Turn left in 13m",
+    "nav_maneuver": "TURN_LEFT",
+    "distance_m": 13.1,
+    "cot": "Proceed into the intersection and turn left to follow our route, as the lead vehicle has departed and the left-turn signal is green."
+  },
+  {
+    "clip_id": "70d71413-d377-4836-ae6a-72f3b3bb5c49",
+    "t0_relative": 8000000,
+    "nav_text": "Turn left in 15m",
+    "nav_maneuver": "TURN_LEFT",
+    "distance_m": 15.1,
+    "cot": "Decelerate and yield to oncoming traffic under the green light before turning left to follow our route."
+  },
+  {
+    "clip_id": "709fe679-4f3e-4938-8767-23886741c6bc",
+    "t0_relative": 11000000,
+    "nav_text": "Turn left in 6m",
+    "nav_maneuver": "TURN_LEFT",
+    "distance_m": 6.1,
+    "cot": "The left-turn traffic light is green, so proceed with our route's left turn through the intersection."
+  },
+  {
+    "clip_id": "8455d8a6-3c18-473b-90fd-a89038684c6f",
+    "t0_relative": 10000000,
+    "nav_text": "Turn left in 4m",
+    "nav_maneuver": "TURN_LEFT",
+    "distance_m": 3.8,
+    "cot": "Turn left through the intersection to follow our route, as the intersection is clear."
+  },
+  {
+    "clip_id": "e7471b86-88f5-40a4-9d99-a005ff13db15",
+    "t0_relative": 11000000,
+    "nav_text": "Turn left in 5m",
+    "nav_maneuver": "TURN_LEFT",
+    "distance_m": 5.2,
+    "cot": "The traffic light is green, so proceed into the intersection and turn left to follow our route."
+  },
+  {
+    "clip_id": "e8221498-a35e-42a2-9e5e-1a9a0185089b",
+    "t0_relative": 10000000,
+    "nav_text": "Turn left in 5m",
+    "nav_maneuver": "TURN_LEFT",
+    "distance_m": 5.2,
+    "cot": "The left-turn traffic light is green, so proceed through the intersection to turn left along our route."
+  },
+  {
+    "clip_id": "ea7bbd31-b7a5-4972-8dbd-7089e6b53de4",
+    "t0_relative": 4000000,
+    "nav_text": "Turn right in 30m",
+    "nav_maneuver": "TURN_RIGHT",
+    "distance_m": 29.8,
+    "cot": "Decelerate and turn right at the intersection to follow our route, yielding as required by the give-way sign."
+  },
+  {
+    "clip_id": "f4fc523c-4dd8-4728-b35d-e8aed5399028",
+    "t0_relative": 11000000,
+    "nav_text": "Turn left in 7m",
+    "nav_maneuver": "TURN_LEFT",
+    "distance_m": 7.3,
+    "cot": "The traffic light is green, so proceed into the intersection and turn left to follow our route."
+  },
+  {
+    "clip_id": "1ae17e2a-bc07-4e57-a04b-e9d5a372cd1e",
+    "t0_relative": 6184920,
+    "nav_text": "Turn left in 10m",
+    "nav_maneuver": "TURN_LEFT",
+    "distance_m": 10.2,
+    "cot": "The left-turn traffic signal is green, so proceed with our route's left turn through the intersection."
+  },
+  {
+    "clip_id": "681c26a7-168b-400d-bcf4-c3a807ca5f8b",
+    "t0_relative": 9000000,
+    "nav_text": "Turn right in 16m",
+    "nav_maneuver": "TURN_RIGHT",
+    "distance_m": 15.7,
+    "cot": "The traffic light is green, so proceed into the intersection and turn right to follow our route."
+  },
+  {
+    "clip_id": "6fb1a5f2-fbbd-40fb-9bfa-bc3ada06e503",
+    "t0_relative": 10000000,
+    "nav_text": "Turn left in 11m",
+    "nav_maneuver": "TURN_LEFT",
+    "distance_m": 11.1,
+    "cot": "Proceed into the intersection and turn left to follow our route, as the left-turn signal is green."
+  },
+  {
+    "clip_id": "82f9f689-6efb-4eb3-af10-070b52eeca22",
+    "t0_relative": 4000000,
+    "nav_text": "Turn right in 14m",
+    "nav_maneuver": "TURN_RIGHT",
+    "distance_m": 14.1,
+    "cot": "The traffic light is green, so proceed into the intersection and turn right to follow our route."
+  },
+  {
+    "clip_id": "b4a2c25d-7f1c-4446-856a-a1c862af9c16",
+    "t0_relative": 12000000,
+    "nav_text": "Turn left in 13m",
+    "nav_maneuver": "TURN_LEFT",
+    "distance_m": 13.0,
+    "cot": "The traffic light is green, so proceed into the intersection and turn left to follow our route."
+  },
+  {
+    "clip_id": "b7dd3c46-ca94-4ffa-a8cf-3a13350c8aba",
+    "t0_relative": 5000000,
+    "nav_text": "Turn left in 5m",
+    "nav_maneuver": "TURN_LEFT",
+    "distance_m": 4.9,
+    "cot": "Proceed into the intersection and turn left to follow our route, as the intersection is clear."
+  },
+  {
+    "clip_id": "c9c045a3-ebe9-4569-9ce3-a44068cf2e3b",
+    "t0_relative": 2000000,
+    "nav_text": "Turn left in 18m",
+    "nav_maneuver": "TURN_LEFT",
+    "distance_m": 17.8,
+    "cot": "Decelerate and turn left at the intersection to follow our route, as the traffic light is green and the lead vehicle is signaling left."
+  },
+  {
+    "clip_id": "99baefc2-e9c3-4e84-bea9-71608e48d580",
+    "t0_relative": 7000000,
+    "nav_text": "Turn left in 7m",
+    "nav_maneuver": "TURN_LEFT",
+    "distance_m": 7.2,
+    "cot": "Proceed into the intersection and turn left to follow our route, as the intersection is clear of conflicting traffic."
+  },
+  {
+    "clip_id": "7ec7451c-a58a-49bc-a3b3-70330a314434",
+    "t0_relative": 8000000,
+    "nav_text": "Turn left in 5m",
+    "nav_maneuver": "TURN_LEFT",
+    "distance_m": 4.6,
+    "cot": "Turn left at the intersection to follow our route, as permitted by the green turn arrow."
+  },
+  {
+    "clip_id": "bd65ae5a-7c50-4d33-a953-bd382c108d04",
+    "t0_relative": 12000000,
+    "nav_text": "Turn left in 10m",
+    "nav_maneuver": "TURN_LEFT",
+    "distance_m": 9.7,
+    "cot": "Proceed into the intersection and turn left to follow our route, as the left-turn signal is green."
+  }
+]

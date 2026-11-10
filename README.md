@@ -74,12 +74,25 @@ End-to-end recipes for the Alpamayo VLA models, covering supervised fine-tuning 
 |--------|-------------|-------|
 | [`recipes/alpamayo1_sft/`](recipes/alpamayo1_sft/README.md) | Alpamayo 1 supervised fine-tuning with Hugging Face Trainer and DeepSpeed | SFT |
 | [`recipes/alpamayo1_5_sft/`](recipes/alpamayo1_5_sft/README.md) | Alpamayo 1.5 supervised fine-tuning with Hugging Face Trainer and DeepSpeed | SFT |
+| [`recipes/alpamayo2_sft/`](recipes/alpamayo2_sft/README.md) | Alpamayo 2 Super supervised fine-tuning with Hugging Face Trainer and DeepSpeed | SFT |
+| [`recipes/alpamayo2edge_sft/`](recipes/alpamayo2edge_sft/README.md) | Alpamayo 2 Edge joint VLM and trajectory-expert fine-tuning, with optional navigation and CoT supervision | SFT |
 | [`recipes/alpamayo1_x_rl/`](recipes/alpamayo1_x_rl/README.md) | Alpamayo 1 and 1.5 open-loop reinforcement learning post-training with Cosmos-RL and GRPO | RL (GRPO) |
 | [`recipes/alpamayo_distillation/`](recipes/alpamayo_distillation/README.md) | Alpamayo 1 and 1.5 distillation, with optional expert SFT and RL refinement |
 | [`recipes/alpamayo1_5_speculative_decoding/`](recipes/alpamayo1_5_speculative_decoding/README.md) | Alpamayo 1.5 Domino and DFlash2 draft training with SpecForge | Speculative Decoding |
 | [`recipes/alpamayo1_5_quant/`](recipes/alpamayo1_5_quant/README.md) | Alpamayo 1.5 quantization with Model Optimizer Toolkit — FP8 and NVFP4 + FP8 Mixed Precision | Quantization |
 
+The [Alpamayo 2 Edge recipe](recipes/alpamayo2edge_sft/README.md) includes joint
+training and trajectory evaluation on PAI, with optional navigation conditioning
+and reasoning supervision. Public PAI CoC labels can supply reasoning targets;
+combined navigation and reasoning training requires annotations for matching
+events. It uses the [C3 inference package](https://github.com/NVlabs/alpamayo2-edge)
+and [`nvidia/Alpamayo2-Edge`](https://huggingface.co/nvidia/Alpamayo2-Edge)
+checkpoint. Edge deployment documentation is planned under
+`recipes/deploy/`.
+
 **What you can adapt:** fine-tune on your own fleet data, adjust the camera count and sensor configuration, and swap reward functions for the RL recipe. See each recipe README for supported inputs and hardware requirements.
+
+For profiling and optimization guidance, see the [training efficiency overview](docs/training_efficiency/00_Overview.md) and [data loading guide](docs/training_efficiency/01_Data_Loading.md).
 
 ---
 
@@ -91,6 +104,7 @@ Helper scripts for preparing data and converting checkpoints across the Alpamayo
 |--------|---------|
 | `scripts/download_pai.py` | Download the Physical AI Autonomous Vehicles dataset from Hugging Face |
 | `scripts/curate_pai_samples.py` | Curate a subset of Physical AI Autonomous Vehicles samples |
+| `scripts/prepare_pai_annotations.py` | Split event annotations or prepare public CoC labels with matching navigation instructions |
 | `scripts/convert_checkpoint.py` | Convert between Alpamayo 1 and 1.5 checkpoints |
 | `scripts/convert_release_config_to_training.py` | Convert a release checkpoint to training format |
 | `scripts/convert_cosmos_rl_checkpoint.py` | Convert a Cosmos-RL checkpoint to Hugging Face format |

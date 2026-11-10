@@ -8,3 +8,42 @@ outputs/*
 **/wandb/
 *.egg-info
 output_stage*
+*.egg-info
+*.out
+*/slack*
+*.log
+
+# Local Alpamayo2 RL runtime and experiment artifacts (never release).
+/recipes/alpamayo2_rl/a2_rl/
+/recipes/alpamayo2_rl/logs/
+/recipes/alpamayo2_rl/outputs/
+/recipes/alpamayo2_rl/wandb/
+/recipes/alpamayo2_rl/training_output/
+/recipes/alpamayo2_rl/triton_cache/
+/recipes/alpamayo2_rl/inductor_cache/
+/recipes/alpamayo2_rl/vqa_sanity_check*.py
+
+# Local archive of historical Alpamayo2 experiments and release validation.
+/.alpamayo2_rl_internal/
+
+# Local Alpamayo2 Edge SFT runtime and experiment artifacts (never release).
+/recipes/alpamayo2edge_sft/a2e_sft/
+/recipes/alpamayo2edge_sft/build/
+/recipes/alpamayo2edge_sft/.cache/
+/recipes/alpamayo2edge_sft/checkpoint-*/
+/recipes/alpamayo2edge_sft/checkpoints/
+/recipes/alpamayo2edge_sft/**/*.safetensors
+/recipes/alpamayo2edge_sft/**/*.pt
+/recipes/alpamayo2edge_sft/**/*.pth
+/recipes/alpamayo2edge_sft/**/*.ckpt
+/recipes/alpamayo2edge_sft/**/pytorch_model*.bin
+/recipes/alpamayo2edge_sft/.env
+/recipes/alpamayo2edge_sft/.env.*
+/recipes/alpamayo2edge_sft/training_output/
+/recipes/alpamayo2edge_sft/triton_cache/
+/recipes/alpamayo2edge_sft/inductor_cache/
+/recipes/alpamayo2edge_sft/--no-binary-package
+/recipes/alpamayo2edge_sft/uv
+
+# Local validation runs, datasets, and reports.
+/.validation/

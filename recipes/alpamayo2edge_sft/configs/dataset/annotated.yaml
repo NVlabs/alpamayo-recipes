@@ -1,0 +1,11 @@
+_target_: alpamayo2edge_sft.dataset.PhysicalAIAnnotatedDataset
+annotations_path: ???
+clip_index_metadata: clip_index.parquet
+validate_navigation_format: true
+# The annotation files define the split; optionally restrict it to selected chunks.
+chunk_ids: null
+split: null
+random_keyframes: false
+use_default_keyframe: false
+require_navigation: false
+require_cot: false

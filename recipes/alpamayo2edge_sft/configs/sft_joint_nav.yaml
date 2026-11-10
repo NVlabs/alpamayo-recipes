@@ -1,0 +1,18 @@
+defaults:
+  - sft_joint
+  - /dataset@data.train_dataset: annotated
+  - /dataset@data.val_dataset: annotated
+  - override /preprocess@data.train_dataset.preprocess: nav
+  - override /preprocess@data.val_dataset.preprocess: nav
+  - _self_
+
+data:
+  train_dataset:
+    require_navigation: true
+    require_cot: false
+  val_dataset:
+    require_navigation: true
+    require_cot: false
+
+paths:
+  output_dir: ./outputs/joint_nav

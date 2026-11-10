@@ -1,6 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 [project]
 name = "alpamayo-recipes"
 version = "0.1.0"
+license = "Apache-2.0"
 requires-python = "==3.12.*"
 dependencies = []
 
@@ -10,6 +14,6 @@ build-backend = "hatchling.build"
 
 # Recipe-side utilities shared by the per-version recipes under recipes/:
 # chat templates, data loaders, metrics, common helpers, visualization, etc.
-# Version-agnostic; per-version dispatch lives in alpamayo.chat_template.
+# Runtime dependencies are specified by the consuming recipe.
 [tool.hatch.build.targets.wheel]
 packages = ["alpamayo"]

@@ -1,11 +1,19 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 from __future__ import annotations
 
+import ast
 import importlib.util
 import json
+import re
+import subprocess
 import sys
 import tomllib
 from pathlib import Path
+from urllib.parse import unquote, urlsplit
 
+import pytest
 import yaml
 
 
@@ -41,14 +49,12 @@ def _defaults_include_override(config: dict, key: str, value: str) -> bool:
 
 def test_recipe_structured_files_parse() -> None:
     """Every recipe config file should be syntactically parseable."""
+    # Check shipped configurations, not ignored environments or experiment outputs.
     structured_files = [
-        *RECIPES_DIR.glob("*/*.toml"),
-        *RECIPES_DIR.glob("*/*.lock"),
-        *RECIPES_DIR.glob("*/*/**/*.toml"),
-        *RECIPES_DIR.glob("*/*/**/*.yaml"),
-        *RECIPES_DIR.glob("*/*/**/*.json"),
+        path for path in TRACKED
+        if RECIPES_DIR in path.parents
+        and path.suffix in {".toml", ".lock", ".yaml", ".yml", ".json"}
     ]
-    structured_files = [path for path in structured_files if "outputs" not in path.parts]
     assert structured_files
 
     for path in structured_files:
@@ -343,3 +349,107 @@ def test_alpamayo1_x_rl_launcher_reads_policy_checkpoint_path_without_heavy_impo
     spec.loader.exec_module(module)
 
     assert module._read_ckpt_path_from_toml() == "/tmp/model"
+
+
+# Edge-specific package, workflow and release contracts.
+SFT_ROOT = ROOT
+RECIPE = SFT_ROOT / "recipes/alpamayo2edge_sft"
+SOURCE_ROOTS = (SFT_ROOT / "recipes", SFT_ROOT / "src")
+
+
+def _tracked_files():
+    names = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT).decode().split("\0")
+    return tuple(ROOT / name for name in sorted(set(names)) if name and (ROOT / name).is_file())
+
+
+TRACKED = _tracked_files()
+RECIPE_FILES = tuple(p for p in TRACKED if RECIPE in p.parents)
+DOCS = tuple(p for p in RECIPE_FILES if p.suffix == ".md") + (ROOT / "README.md",)
+
+
+
+def _module_exists(name: str) -> bool:
+    parts = name.split(".")
+    return any(
+        root.joinpath(*parts).with_suffix(".py").is_file()
+        or (root.joinpath(*parts) / "__init__.py").is_file()
+        for root in SOURCE_ROOTS
+    )
+
+
+def _walk(value):
+    if isinstance(value, dict):
+        for key, child in value.items():
+            yield key, child
+            yield from _walk(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from _walk(child)
+
+
+def test_structured_configs_parse_and_targets_are_shipped() -> None:
+    for path in RECIPE_FILES:
+        if path.suffix in {".toml", ".lock"}:
+            tomllib.loads(path.read_text())
+        elif path.suffix == ".json":
+            json.loads(path.read_text())
+        elif path.suffix in {".yaml", ".yml"}:
+            config = yaml.safe_load(path.read_text())
+            assert isinstance(config, dict)
+            for key, value in _walk(config):
+                if key == "_target_":
+                    assert value.startswith("alpamayo2edge_sft."), (path, value)
+                    # A target can be a class, function, or class method.
+                    parts = value.split(".")
+                    assert any(_module_exists(".".join(parts[:end]))
+                               for end in range(2, len(parts))), (path, value)
+
+
+def test_runtime_imports_do_not_require_missing_recipe_backends() -> None:
+    files = [p for p in RECIPE_FILES if p.suffix == ".py" and "tests" not in p.relative_to(RECIPE).parts]
+    files += [ROOT / "src/alpamayo/data/pai_utils.py", ROOT / "scripts/prepare_pai_annotations.py"]
+    for path in files:
+        tree = ast.parse(path.read_text(), filename=str(path))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                names = [alias.name for alias in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                names = [node.module] if node.module else []
+            else:
+                continue
+            for name in names:
+                head = name.split(".")[0]
+                assert head not in {"alpax", "alpamayo_r1", "alpamayo1_5", "alpamayo2_super"}, (
+                    path, name
+                )
+                if head in {"alpamayo", "alpamayo2edge_sft"}:
+                    assert _module_exists(name), f"{path} imports missing {name}"
+
+
+@pytest.mark.parametrize("path", DOCS, ids=lambda path: str(path.relative_to(ROOT)))
+def test_readme_relative_links_resolve(path: Path) -> None:
+    text = re.sub(r"```.*?```", "", path.read_text(), flags=re.DOTALL)
+    for raw in re.findall(r"!?\[[^\]]*\]\(([^)]+)\)", text):
+        target = raw.split()[0].strip("<>")
+        url = urlsplit(target)
+        if url.scheme or url.netloc or not url.path:
+            continue
+        # The upstream repository README links to GitHub's issue-template route.
+        # This repository-relative web route does not name a checkout-local file.
+        if path == ROOT / "README.md" and target == "../../issues/new/choose":
+            continue
+        linked = path.parent / unquote(url.path)
+        assert linked.exists(), f"Broken link in {path.relative_to(ROOT)}: {target}"
+
+
+@pytest.mark.parametrize("path", DOCS, ids=lambda path: str(path.relative_to(ROOT)))
+def test_readme_shell_examples_have_valid_syntax_and_checkout_paths(path: Path) -> None:
+    text = path.read_text()
+    assert "$REPO_DIR/sft/" not in text, "Use the multi-recipe checkout layout"
+    for script in re.findall(r"```(?:bash|sh|shell)\n(.*?)```", text, flags=re.DOTALL):
+        result = subprocess.run(["bash", "-n"], input=script, text=True, capture_output=True)
+        assert result.returncode == 0, f"Invalid shell in {path}: {result.stderr}"
+        for relative in re.findall(r"\bpython\s+((?:scripts|recipes)/[^\s]+\.py)", script):
+            assert (SFT_ROOT / relative).is_file(), f"Missing script in {path}: {relative}"
+        for module in re.findall(r"\s-m\s+(alpamayo2edge_sft\.[\w.]+)", script):
+            assert _module_exists(module), f"Missing entrypoint in {path}: {module}"

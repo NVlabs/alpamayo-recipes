@@ -1,0 +1,5 @@
+defaults:
+  - nav_cot
+  - _self_
+
+generation_mode: true

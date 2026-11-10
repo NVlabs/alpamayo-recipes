@@ -21,12 +21,13 @@ import io
 import logging
 import pathlib
 import zipfile
-from typing import Any, Iterable
+from typing import Any
 import pandas as pd
 import numpy as np
 
 from physical_ai_av import egomotion, video
 from physical_ai_av.dataset import Features
+from alpamayo.data.pai_metadata import parse_chunk_ids, reasoning_text
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +51,8 @@ class PhysicalAIAVDatasetLocalInterface:
         start_safe_margin_seconds: float = 1.6,
         end_safe_margin_seconds: float = 6.4,
         reasoning_metadata: str | None = None,
+        split: str | None = None,
+        inclusive_start: bool = False,
     ) -> None:
         """Initialize the local PAI dataset interface.
 
@@ -59,20 +62,11 @@ class PhysicalAIAVDatasetLocalInterface:
                       If None, all available chunks will be loaded.
         """
         self.local_dir = local_dir
-        self.chunk_ids = None
-        if chunk_ids is not None:
-            if isinstance(chunk_ids, str) and "-" in chunk_ids:
-                chunk_start = int(chunk_ids.split("-")[0])
-                chunk_end = int(chunk_ids.split("-")[1])
-                self.chunk_ids = list(range(chunk_start, chunk_end))
-            elif isinstance(chunk_ids, (list, tuple, Iterable)):
-                self.chunk_ids = list(chunk_ids)
-            elif isinstance(chunk_ids, int):
-                self.chunk_ids = [chunk_ids]
-            else:
-                logger.error(f"Invalid chunk_ids: {chunk_ids} {type(chunk_ids)}")
-        else:
-            logger.info("Loading all chunks")
+        self.chunk_ids = parse_chunk_ids(chunk_ids)
+        if split not in (None, "train", "val", "test"):
+            raise ValueError("split must be train, val, test, or null")
+        self.split = split
+        self.inclusive_start = inclusive_start
 
         logger.info(f"Loading from {local_dir} with chunk_ids: {self.chunk_ids}")
 
@@ -88,6 +82,14 @@ class PhysicalAIAVDatasetLocalInterface:
         self.features = Features(features_df)
 
         self.clip_index = pd.read_parquet(os.path.join(self.local_dir, clip_index_metadata))
+        if split is not None:
+            if "split" not in self.clip_index.columns:
+                raise ValueError("Official split filtering requires a split column in the clip index")
+            self.clip_index = self.clip_index.loc[self.clip_index["split"] == split]
+        if self.chunk_ids is not None:
+            self.clip_index = self.clip_index.loc[self.clip_index["chunk"].isin(self.chunk_ids)]
+        if self.clip_index.empty:
+            raise ValueError(f"No clips selected for chunk_ids={self.chunk_ids!r}, split={split!r}")
         self.reasoning_db = None
         if reasoning_metadata is not None:
             reasoning_metadata_path = (
@@ -103,18 +105,6 @@ class PhysicalAIAVDatasetLocalInterface:
             self.reasoning_db = self._read_reasoning_data(reasoning_metadata_df)
 
         self.filter_clips_by_event_t0s()
-
-        self.sensor_presence = pd.read_parquet(
-            os.path.join(self.local_dir, "metadata/feature_presence.parquet")
-        )
-        self.chunk_sensor_presence = (
-            pd.concat(
-                [self.clip_index[["chunk"]], self.sensor_presence.select_dtypes(include=bool)],
-                axis=1,
-            )
-            .groupby("chunk")
-            .any()
-        )
 
     @staticmethod
     def _read_reasoning_data(reasoning_df: pd.DataFrame) -> dict[str, dict[str, Any]]:
@@ -145,9 +135,12 @@ class PhysicalAIAVDatasetLocalInterface:
                 continue
             for ev in parsed:
                 if isinstance(ev, dict) and "event_start_timestamp" in ev:
-                    ts_list.append(int(ev["event_start_timestamp"]))
-                    reasoning_text = ev.get("coc", ev.get("cot", ""))
-                    cot_list.append(str(reasoning_text))
+                    text = reasoning_text(ev)
+                    timestamp = ev["event_start_timestamp"]
+                    if text is None or isinstance(timestamp, bool) or not isinstance(timestamp, (int, np.integer)):
+                        continue
+                    ts_list.append(int(timestamp))
+                    cot_list.append(text)
             out[cid] = {
                 "event_t0s": np.asarray(ts_list, dtype=np.int64),
                 "cot": cot_list,
@@ -159,13 +152,13 @@ class PhysicalAIAVDatasetLocalInterface:
 
         External ``coc`` and legacy ``cot`` labels in parsed ``events`` are normalized
         into the internal ``cot`` field. Keeps only events where
-        ``event_t0 >= start_safe_margin_seconds`` (in µs) and
+        ``event_t0 > start_safe_margin_seconds`` (in µs) and
         ``event_t0 + end_safe_margin_seconds`` (in µs) <= ``CLIP_RELATIVE_DURATION_US``
         (20 s, fixed relative clip length). Drops rows
         with no reasoning entry or empty ``event_t0s`` after filtering. Writes aligned
         ``event_t0s`` and ``cot`` columns on ``clip_index``.
         """
-        if self.reasoning_db is None or len(self.reasoning_db) == 0:
+        if self.reasoning_db is None:
             return
         start_margin_us = int(self.start_safe_margin_seconds * 1_000_000)
         end_margin_us = int(self.end_safe_margin_seconds * 1_000_000)
@@ -183,7 +176,7 @@ class PhysicalAIAVDatasetLocalInterface:
                 cots.extend([""] * (len(arr) - len(cots)))
             elif len(cots) > len(arr):
                 cots = cots[: len(arr)]
-            mask = arr >= start_margin_us
+            mask = arr >= start_margin_us if self.inclusive_start else arr > start_margin_us
             mask &= (arr + end_margin_us) <= CLIP_RELATIVE_DURATION_US
             idx = np.flatnonzero(mask)
             return pd.Series(
@@ -200,6 +193,8 @@ class PhysicalAIAVDatasetLocalInterface:
         removed = (~non_empty).sum()
         self.clip_index = self.clip_index.loc[non_empty]
 
+        if self.clip_index.empty:
+            raise ValueError("No clips have nonblank reasoning within the selected event window")
         if removed > 0:
             logger.info(
                 "[PAIDataset] filter_clip_index_by_event_t0s: removed %d rows with empty event_t0s after filtering, remaining %d rows",
