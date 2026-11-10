@@ -1,9 +1,7 @@
 {
-  "model_repository": "nvidia/EA-Alpamayo2-Edge",
-  "model_revision": "5aadcb85359462de238eb8a2112c8252e3d895cb",
   "dataset_repository": "nvidia/PhysicalAI-Autonomous-Vehicles",
   "dataset_revision": "33f9bf447ed3bcb7d545ce13f4226f824214fafb",
-  "scope": "Chunks whose drive sessions are absent from both recorded driving-training manifests for this model. VQA and backbone pretraining were not exhaustively audited; this is not a guarantee that the checkpoint has never seen these scenes.",
+  "scope": "Historical chunk selection whose drive sessions were absent from both driving-training manifests.",
   "split_unit": "drive session",
   "chunks": {
     "test": [

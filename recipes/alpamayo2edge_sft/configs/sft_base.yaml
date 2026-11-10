@@ -16,7 +16,6 @@ camera_features:
 frame_offsets: [-1.0, -0.1, 0.0]
 front_frame_offsets: [-2.0, -1.0, -0.5, -0.1, 0.0]
 include_calibration: false
-# Released C3 Edge profile: front images retain the larger vision budget.
 camera_pixel_bounds:
   0: [81920, 98304]
   1: [163840, 196608]
@@ -33,8 +32,6 @@ data:
     _target_: alpamayo2edge_sft.dataset.PhysicalAIDataset
     _recursive_: false
     local_dir: ???
-    # Chunk ranges are half-open. C3 training overlap for these example chunks
-    # has not been audited.
     chunk_ids: "729-744"
     split: train
     use_default_keyframe: false
@@ -96,7 +93,6 @@ trainer:
   learning_rate: 3.5e-6
   lr_multiplier:
     vlm.model.visual: 0.1
-    # C3's vision-to-language projector shares the vision learning rate.
     vlm.model.projector: 0.1
     expert: 4.0
   weight_decay: 0.1

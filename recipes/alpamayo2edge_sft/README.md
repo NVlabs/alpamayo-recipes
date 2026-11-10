@@ -114,8 +114,7 @@ data, report the provenance and overlap checks for your evaluation set, and keep
 entire drives separate between training and validation. The default `split`
 filter preserves official membership and yields 1,443 training and 1,055
 validation clips. The bundled
-[driving-session audit](./assets/pai_driving_disjoint_chunks.json) covers the
-unseen data chunks by Alpamayo2-edge model.
+[PAI chunk selections](./assets/pai_driving_disjoint_chunks.json) covers the unseen data chunks by Alpamayo2-edge model.
 
 ### Navigation and reasoning annotations
 

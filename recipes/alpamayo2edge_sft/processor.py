@@ -79,7 +79,7 @@ def build_conversation(**kwargs: Any):
 
 
 def normalize_image_patches(patches: torch.Tensor, image_processor: Any) -> torch.Tensor:
-    """Normalize C3 uint8 patches in their native height/width/channel/time layout."""
+    """Normalize Cosmos 3 Edge uint8 patches in native height/width/channel/time layout."""
     channels = len(image_processor.image_mean)
     temporal = image_processor.temporal_patch_size
     patch_dim = image_processor.patch_size**2 * channels * temporal

@@ -85,7 +85,7 @@ The [Alpamayo 2 Edge recipe](recipes/alpamayo2edge_sft/README.md) includes joint
 training and trajectory evaluation on PAI, with optional navigation conditioning
 and reasoning supervision. Public PAI CoC labels can supply reasoning targets;
 combined navigation and reasoning training requires annotations for matching
-events. It uses the [C3 inference package](https://github.com/NVlabs/alpamayo2-edge)
+events. It uses the [Alpamayo 2 Edge inference package](https://github.com/NVlabs/alpamayo2-edge)
 and [`nvidia/Alpamayo2-Edge`](https://huggingface.co/nvidia/Alpamayo2-Edge)
 checkpoint. Edge deployment documentation is planned under
 `recipes/deploy/`.

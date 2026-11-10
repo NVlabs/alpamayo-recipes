@@ -301,7 +301,6 @@ def test_joint_vision_precision_scope_and_public_export(tmp_path, dtype):
     # Install once before the observation hook, so it sees the effective inputs.
     with joint_sft_vision_precision(model.vlm):
         pass
-    # C3's SigLIP2 vision encoder has learned positions and no vision RoPE.
     visual = model.vlm.model.visual
     assert not hasattr(visual, "blocks")
     assert not hasattr(model.vlm, "_joint_sft_vision_precision")

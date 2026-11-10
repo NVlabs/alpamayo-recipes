@@ -433,7 +433,7 @@ def test_generation_collator_keeps_stable_event_ids_outside_model_inputs():
 
 
 def test_cosmos3_patch_normalization_matches_checkpoint_channel_layout():
-    """Unequal channels expose the C2/C3 flattened-patch layout difference."""
+    """Unequal channels verify the Cosmos 3 Edge flattened-patch channel layout."""
     processor = Cosmos3EdgeImageProcessor(
         patch_size=2, merge_size=1, temporal_patch_size=1,
         image_mean=[0.1, 0.5, 0.9], image_std=[0.2, 0.4, 0.8],
