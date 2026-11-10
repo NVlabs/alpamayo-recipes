@@ -3,19 +3,18 @@
 
 """Launch Alpamayo 2 Super supervised fine-tuning."""
 
-from copy import deepcopy
 from pathlib import Path
 
 import hydra
-from hydra.core.hydra_config import HydraConfig
 from hydra.utils import instantiate
-from omegaconf import DictConfig, OmegaConf, open_dict
+from omegaconf import DictConfig, OmegaConf
 import torch
 from transformers import set_seed
 import wandb
 
 from alpamayo2_super.common import logging
 from alpamayo2_super.common.logging import setup_logging
+from alpamayo2_sft.config_io import save_run_config
 from alpamayo2_sft.trainer import Alpamayo2SuperTrainer, TrainingArguments
 
 
@@ -93,20 +92,7 @@ def train(config: DictConfig) -> None:
     if trainer.is_world_process_zero():
         output_dir = Path(config.paths.output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
-        with open_dict(config):
-            config.hydra = {
-                key: HydraConfig.get()[key] for key in HydraConfig.get() if key != "runtime"
-            }
-        # Keep the API key out of the persisted config; Hydra still records CLI
-        # overrides verbatim, so prefer `wandb login` over `wandb.key=...`.
-        save_config = deepcopy(config)
-        if save_config.get("wandb") is not None and save_config.wandb.get("key") is not None:
-            save_config.wandb.key = "***"
-        OmegaConf.save(
-            config=save_config,
-            f=output_dir / "config.yaml",
-            resolve=True,
-        )
+        save_run_config(config, output_dir)
         if config.get("wandb") is not None:
             init_wandb(config, output_dir)
 
