@@ -1,0 +1,45 @@
+[project]
+name = "alpamayo2edge-edgellm"
+version = "0.1.0"
+requires-python = "==3.12.*"
+# The DRIVE AGX Thor environment (README, Thor step 0: thor/setup.sh installs it from uv.lock with
+# `uv sync --frozen`). tensorrt is deliberately absent: its wheel comes from the TensorRT SDK on the
+# board, since engines are not portable across TensorRT versions. The x86 host environment is
+# Edge-LLM's own (`pip install -e tensorrt-edge-llm[tools]`, README host step 2) and is not locked
+# here: the submodule is not part of the archived package the CI builds.
+dependencies = [
+  "alpamayo-recipes",  # the shared package every recipe depends on (repo contract)
+  "cmake",
+  "ninja",
+  "nvidia-curand==10.4.*",   # the CUDA 13 cuRAND headers Edge-LLM's CMake needs; DRIVE OS ships none
+  "numpy==2.4.3",
+  "pillow==12.0.0",
+  "safetensors==0.8.0",
+  "tokenizers==0.22.2",
+  "torch==2.10.0",
+]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+# Look one level up (recipes/) so setuptools finds this recipe as a package.
+[tool.setuptools.packages.find]
+where = [".."]
+include = ["alpamayo2edge_edgellm*"]
+exclude = ["alpamayo2edge_edgellm.tensorrt-edge-llm*"]
+
+[tool.uv]
+environments = ["sys_platform == 'linux'"]
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
+
+[tool.uv.sources]
+alpamayo-recipes = { path = "../../src", editable = true }
+torch = { index = "pytorch-cu130" }
+
+[tool.ruff]
+line-length = 100
