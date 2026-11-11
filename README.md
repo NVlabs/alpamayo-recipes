@@ -26,7 +26,7 @@
 ## What's New
 
 - [**NVIDIA Alpamayo 2 Edge**](https://github.com/NVlabs/alpamayo2-edge) is an open 2B-parameter in-vehicle reasoning vision-language-action model built on the Nemotron-based backbone of NVIDIA Cosmos 3 Edge. Model weights and code can be found on [Hugging Face](https://huggingface.co/nvidia/Alpamayo2-Edge) and [GitHub](https://github.com/NVlabs/alpamayo2-edge).
-- [**NVIDIA AlpaJudge**](https://github.com/NVlabs/alpajudge) is now available for scoring autonomous-driving reasoning, with reference-based and reference-free checkpoints. Get the inference code on [GitHub](https://github.com/NVlabs/alpajudge) and model weights on [Hugging Face](https://huggingface.co/nvidia/alpajudge).
+- [**NVIDIA AlpaJudge**](https://github.com/NVlabs/alpajudge) is a reasoning evaluation model for autonomous driving, with reference-based and reference-free checkpoints. Get the inference code on [GitHub](https://github.com/NVlabs/alpajudge) and model weights on [Hugging Face](https://huggingface.co/nvidia/alpajudge).
 - [**NVIDIA Alpamayo 2 Super**](https://github.com/NVlabs/alpamayo2) is an open 34B reasoning Vision Language Action model for end-to-end autonomous driving, built on the NVIDIA Cosmos 3 backbone. Model weights and code can be found on [Hugging Face](https://huggingface.co/nvidia/Alpamayo2-Super) and [GitHub](https://github.com/NVlabs/alpamayo2).
 - [**NVIDIA AlpaGym**](https://github.com/NVlabs/alpagym) is a closed-loop reinforcement learning framework for training end-to-end autonomous driving policies in simulation.
 - [**NVIDIA CoC Auto-Labeling Pipeline**](https://github.com/NVlabs/alpamayo-coc-autolabeler) is an open-source pipeline that generates Chain-of-Causation (CoC) reasoning labels for driving clips automatically.
