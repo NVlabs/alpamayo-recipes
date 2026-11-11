@@ -7,9 +7,8 @@ from copy import deepcopy
 from pathlib import Path
 
 import hydra
-from hydra.core.hydra_config import HydraConfig
 from hydra.utils import instantiate
-from omegaconf import DictConfig, OmegaConf, open_dict
+from omegaconf import DictConfig, OmegaConf
 import torch
 from transformers import set_seed
 import wandb
@@ -93,10 +92,6 @@ def train(config: DictConfig) -> None:
     if trainer.is_world_process_zero():
         output_dir = Path(config.paths.output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
-        with open_dict(config):
-            config.hydra = {
-                key: HydraConfig.get()[key] for key in HydraConfig.get() if key != "runtime"
-            }
         # Keep the API key out of the persisted config; Hydra still records CLI
         # overrides verbatim, so prefer `wandb login` over `wandb.key=...`.
         save_config = deepcopy(config)
